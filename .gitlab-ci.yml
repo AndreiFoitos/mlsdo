@@ -39,3 +39,10 @@ setup_infra:
     - ssh $CI_SSH_HOST "sudo docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
     - ssh $CI_SSH_HOST "sudo docker pull $CI_REGISTRY_IMAGE:app-latest"
 
+update_data:
+  stage: update
+  before_script:
+    - !reference [.update_app_image, before_script]
+  script:
+    - ssh $CI_SSH_HOST "sudo docker stop ppl-load_data || true && sudo docker rm ppl-load_data || true"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-load_data --network mlsdo-lab5_lab5 -v /home/$VM_USER/app/data:/data $CI_REGISTRY_IMAGE:app-latest python ppl-load_data.py"
