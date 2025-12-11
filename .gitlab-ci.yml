@@ -46,3 +46,11 @@ update_data:
   script:
     - ssh $CI_SSH_HOST "sudo docker stop ppl-load_data || true && sudo docker rm ppl-load_data || true"
     - ssh $CI_SSH_HOST "sudo docker run --name ppl-load_data --network mlsdo-lab5_lab5 -v /home/$VM_USER/app/data:/data $CI_REGISTRY_IMAGE:app-latest python ppl-load_data.py"
+
+train_model:
+  stage: training
+  before_script:
+    - !reference [.update_app_image, before_script]
+  script:
+    - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-lab5_lab5 $CI_REGISTRY_IMAGE:app-latest python ppl-train.py"
