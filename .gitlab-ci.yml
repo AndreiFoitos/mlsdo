@@ -51,9 +51,25 @@ update_data:
       - data/**
 
 train_model:
-  stage: training
-  before_script:
-    - !reference [.update_app_image, before_script]
+  stage: train
+  image: python:3.9
   script:
-    - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
-    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-lab5_lab5 $CI_REGISTRY_IMAGE:app-latest python ppl-train.py"
+    - echo "Installing dependencies..."
+    - pip install -r requirements.txt
+    - echo "Running training job..."
+    - python app/train.py
+  rules:
+    # 1. Run automatically on a schedule (e.g., nightly retrain)
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+
+    # 2. Run automatically if relevant files change
+    - changes:
+        - data/**/*
+        - app/**/*
+        - environment.yml
+      when: on_success
+
+    # 3. Allow manual triggering for all other cases (e.g., forced experiments)
+    - when: manual
+      allow_failure: true
