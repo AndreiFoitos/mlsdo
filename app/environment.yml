@@ -1,0 +1,20 @@
+name: mlsdo-lab5
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - git
+  - pip:
+    - --extra-index-url https://download.pytorch.org/whl/cpu
+    - datasets
+    - torch==2.8.0+cpu
+    - transformers
+    - torchmetrics
+    - psycopg2-binary
+    - accelerate>=0.26.0
+    - fastapi[standard]
+    - pydantic
+    - requests
+    - mlflow

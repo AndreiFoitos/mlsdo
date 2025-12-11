@@ -1,0 +1,94 @@
+name: mlsdo-lab5
+services:
+  mlflow:
+    build: ./mlflow-docker
+    ports:
+      - "5000:5000"
+    environment: # Ideally, centralized (e.g., in a .env file)
+      MLFLOW_TRACKING_USERNAME: mlflowuser
+      MLFLOW_TRACKING_PASSWORD: mlflowpass
+      MLFLOW_SERVER_ALLOWED_HOSTS: "0.0.0.0:5000,localhost:5000,mlflow:5000"
+      MLFLOW_S3_ENDPOINT_URL: http://minio-mlflow:9000
+      BUCKET: mlflow-artefact-store
+      AWS_ACCESS_KEY_ID: mlflow_access_key
+      AWS_SECRET_ACCESS_KEY: mlflow_secret_key
+      POSTGRES_URL: postgresql+psycopg2://postgres:pw2@postgres-mlflow:5433/mlflow
+    volumes:
+      - ./volumes/mlartifacts:/app/mlartifacts
+    networks:
+      - lab5
+
+  postgres-mlflow:
+    image: postgres:latest
+    environment: # Ideally, centralized (e.g., in a .env file)
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pw2 # Ideally, loaded from a secret manager or .env file
+      POSTGRES_DB: mlflow
+      PGPORT: 5433 # Change the default port to not clash with other postgres instances
+    # ports:
+    #   - "5433:5433" # Does not need to be exposed (i.e., security through obscurity)
+    volumes:
+      - ./volumes/postgres-mlflow_data:/var/lib/postgresql
+    networks:
+      - lab5
+
+  postgres-ml:
+    image: postgres:latest
+    environment: # Ideally, centralized (e.g., in a .env file)
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pw1 # Ideally, loaded from a secret manager or .env file
+      POSTGRES_DB: reviews_db
+    # ports:
+    #   - "5432:5432" # Does not need to be exposed (i.e., security through obscurity)
+    volumes:
+      - ./volumes/postgres-ml_data:/var/lib/postgresql
+    networks:
+      - lab5
+  
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8082:8080" # Port 8082 is the exposed via Warpgate
+    networks:
+      - lab5
+
+  minio-mlflow:
+    build: ./minio
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: pw3pw3pw3
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./volumes/minio_data:/data
+      - ./minio/policies:/policies
+    networks:
+      - lab5
+
+  mongo-express:
+    image: mongo-express:latest
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: my-secret-pw
+      ME_CONFIG_MONGODB_SERVER: mongo
+    ports:
+      - "8081:8081"
+    networks:
+      - lab5
+
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: my-secret-pw
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./volumes/mongo_data:/data/db
+    networks:
+      - lab5
+
+networks:
+  lab5:
+    driver: bridge
