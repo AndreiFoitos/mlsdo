@@ -73,3 +73,11 @@ train_model:
     # 3. Allow manual triggering for all other cases (e.g., forced experiments)
     - when: manual
       allow_failure: true
+
+deploy_api:
+  stage: deploy
+  before_script:
+    - !reference [.update_app_image, before_script]
+  script:
+    - ssh $CI_SSH_HOST "sudo docker stop app-api || true && sudo docker rm app-api || true"
+    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network mlsdo-lab5_lab5 -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest python -m fastapi run app.py --host 0.0.0.0 --port 8080 --app app"
