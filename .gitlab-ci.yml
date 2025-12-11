@@ -51,7 +51,7 @@ update_data:
       - data/**
 
 train_model:
-  stage: train
+  stage: training
   image: python:3.9
   script:
     - echo "Installing dependencies..."
