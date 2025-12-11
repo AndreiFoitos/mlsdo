@@ -1,0 +1,26 @@
+variables:
+  VM_USER: "warpgate"
+
+image: finalgene/openssh
+
+stages:
+  - build
+  - setup
+  - update
+  - training
+  - deploy
+
+build_app:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - cd app
+    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" .
+    - docker push "$CI_REGISTRY_IMAGE:app-latest"
+  only:
+    changes:
+      - app/**
