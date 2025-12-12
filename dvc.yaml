@@ -1,0 +1,7 @@
+stages:
+  preprocess:
+    cmd: python data/preprocessing/preprocessing.py
+    deps:
+      - data/preprocessing/preprocessing.py
+    outs:
+      - data/issue_with_labels.csv

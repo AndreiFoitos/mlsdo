@@ -1,0 +1,14 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python data/preprocessing/preprocessing.py
+    deps:
+    - path: data/preprocessing/preprocessing.py
+      hash: md5
+      md5: 352b785a2d8ed99dc9795ab090d137a0
+      size: 1742
+    outs:
+    - path: data/issue_with_labels.csv
+      hash: md5
+      md5: 68b329da9893e34099c7d8ad5cb9c940
+      size: 1
