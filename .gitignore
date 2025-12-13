@@ -1,0 +1,45 @@
+# System
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+*.ipynb_checkpoints/
+
+# Docker Volumes
+volumes/
+
+# Data Management (DVC)
+*.archive
+data/*.archive
+data/raw/*.archive
+
+# Ignore the actual processed data file (tracked by DVC)
+data/issue_with_labels.csv
+
+# DVC Internal
+.dvc/tmp
+.dvc/cache
+# Note: Keep .dvc/.gitignore, dvc.yaml, and dvc.lock!
+
+# Model Training Outputs
+training_logs/
+logs/
+mlruns/
+
+# MLflow & Artifacts
+mlartifacts/
+outputs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
