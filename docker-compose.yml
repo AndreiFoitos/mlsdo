@@ -1,4 +1,4 @@
-name: mlsdo-lab5
+name: mlsdo-assignment
 services:
   mlflow:
     build: ./mlflow-docker
@@ -16,7 +16,7 @@ services:
     volumes:
       - ./volumes/mlartifacts:/app/mlartifacts
     networks:
-      - lab5
+      - assignment
 
   postgres-mlflow:
     image: postgres:latest
@@ -30,7 +30,7 @@ services:
     volumes:
       - ./volumes/postgres-mlflow_data:/var/lib/postgresql
     networks:
-      - lab5
+      - assignment
 
   postgres-ml:
     image: postgres:latest
@@ -38,19 +38,19 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pw1 # Ideally, loaded from a secret manager or .env file
       POSTGRES_DB: reviews_db
-    # ports:
-    #   - "5432:5432" # Does not need to be exposed (i.e., security through obscurity)
+    ports:
+      - "5432:5432" # Does not need to be exposed (i.e., security through obscurity)
     volumes:
       - ./volumes/postgres-ml_data:/var/lib/postgresql
     networks:
-      - lab5
+      - assignment
   
   adminer:
     image: adminer:latest
     ports:
       - "8082:8080" # Port 8082 is the exposed via Warpgate
     networks:
-      - lab5
+      - assignment
 
   minio-mlflow:
     build: ./minio
@@ -64,7 +64,7 @@ services:
       - ./volumes/minio_data:/data
       - ./minio/policies:/policies
     networks:
-      - lab5
+      - assignment
 
   mongo-express:
     image: mongo-express:latest
@@ -75,7 +75,7 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - lab5
+      - assignment
 
   mongo:
     image: mongo:latest
@@ -87,8 +87,8 @@ services:
     volumes:
       - ./volumes/mongo_data:/data/db
     networks:
-      - lab5
+      - assignment
 
 networks:
-  lab5:
+  assignment:
     driver: bridge
