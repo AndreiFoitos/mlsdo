@@ -13,7 +13,7 @@ def clean_text(text):
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient("mongodb://root:my-secret-pw@localhost:27017")
 
 labels_db = client["MiningDesignDecisions"]
 jira_db = client["JiraRepos"]
