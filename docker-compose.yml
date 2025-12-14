@@ -4,7 +4,7 @@ services:
     build: ./mlflow-docker
     ports:
       - "5000:5000"
-    environment: # Ideally, centralized (e.g., in a .env file)
+    environment:
       MLFLOW_TRACKING_USERNAME: mlflowuser
       MLFLOW_TRACKING_PASSWORD: mlflowpass
       MLFLOW_SERVER_ALLOWED_HOSTS: "0.0.0.0:5000,localhost:5000,mlflow:5000,*:5000"
@@ -20,11 +20,11 @@ services:
 
   postgres-mlflow:
     image: postgres:latest
-    environment: # Ideally, centralized (e.g., in a .env file)
+    environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pw2 # Ideally, loaded from a secret manager or .env file
+      POSTGRES_PASSWORD: pw2
       POSTGRES_DB: mlflow
-      PGPORT: 5433 # Change the default port to not clash with other postgres instances
+      PGPORT: 5433 
     # ports:
     #   - "5433:5433" # Does not need to be exposed (i.e., security through obscurity)
     volumes:
@@ -34,12 +34,12 @@ services:
 
   postgres-ml:
     image: postgres:latest
-    environment: # Ideally, centralized (e.g., in a .env file)
+    environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pw1 # Ideally, loaded from a secret manager or .env file
+      POSTGRES_PASSWORD: pw1
       POSTGRES_DB: reviews_db
     ports:
-      - "5432:5432" # Does not need to be exposed (i.e., security through obscurity)
+      - "5432:5432" 
     volumes:
       - ./volumes/postgres-ml_data:/var/lib/postgresql
     networks:

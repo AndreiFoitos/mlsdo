@@ -27,7 +27,6 @@ build_app:
 
 setup_infra:
   stage: setup
-  # (Note: we can ssh into the VM directly without SSH_PRIVATE_KEY)
   script:
     - 'which rsync || ( apk add --update rsync )'
     - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app && sudo chown $VM_USER:$VM_USER /home/$VM_USER/app"
@@ -59,18 +58,15 @@ train_model:
     - echo "Running training job..."
     - python app/train.py
   rules:
-    # 1. Run automatically on a schedule (e.g., nightly retrain)
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
 
-    # 2. Run automatically if relevant files change
     - changes:
         - data/**/*
         - app/**/*
         - environment.yml
       when: on_success
 
-    # 3. Allow manual triggering for all other cases (e.g., forced experiments)
     - when: manual
       allow_failure: true
 
