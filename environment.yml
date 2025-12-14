@@ -1,0 +1,29 @@
+name: mlsdo-assignment
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - git
+  - sqlite
+  - numpy<2
+  - pip:
+    - dvc
+    - dvc-gdrive
+    - dvc-s3
+    - --extra-index-url https://download.pytorch.org/whl/cpu
+    - datasets
+    - torch==2.2.0
+    - torchvision     
+    - transformers
+    - torchmetrics
+    - psycopg2-binary
+    - pandas
+    - pymongo
+    - pandera
+    - accelerate>=0.26.0
+    - fastapi[standard]
+    - pydantic
+    - requests
+    - mlflow
