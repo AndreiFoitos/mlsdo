@@ -43,3 +43,7 @@ outputs/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Not Task 1 related
+minio/
+app/
