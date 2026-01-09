@@ -73,7 +73,7 @@ async def say_hello():
     return {'message': 'hello'}
 
 
-@app.post('/predict')
+@app.post('/predictions')
 def predict_and_store(review: Review) -> PredictionResponse:
     global model, db_connection, tokenizer, device
     if model is None:
