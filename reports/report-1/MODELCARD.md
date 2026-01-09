@@ -53,14 +53,21 @@ The Architectural Design Decision (ADD) Classifier is a machine learning model d
 - **Developed by:** Group 6 (Andrei Foitoș, Andrei-George Iclodean, and Yuwen Zhou)
 - **Model type:** Binary Text Classifier using DistilBERT
 - **Language(s):** English
-- **Finetuned from models:** [distilbert-base-uncased](https://huggingface.co/distilbert-base-uncased) (and initially [google/bert_uncased_L-2_H-128_A-2](https://huggingface.co/google/bert_uncased_L-2_H-128_A-2))
+- __Finetuned from models:__ [distilbert-base-uncased](https://huggingface.co/distilbert-base-uncased) (and initially [google/bert_uncased_L-2_H-128_A-2](https://huggingface.co/google/bert_uncased_L-2_H-128_A-2))
 
 This model leverages the DistilBERT architecture, a distilled version of BERT that is smaller and faster while retaining most of the performance. It takes as input the concatenated text of a Jira issue's summary and description and outputs the probability of it being an architectural decision.
 
 ### Model Sources
 
-- **Repository:** [Group 6 Project](https://gitlab.com/rug-cs/courses/mlops/2025-2026/students/group-6/group-6-project/-/tree/develop?ref_type=heads)
+- __Repository:__ [Group 6 Project](https://gitlab.com/rug-cs/courses/mlops/2025-2026/students/group-6/group-6-project/-/tree/develop?ref_type=heads)
 - **Data Source:** [MiningDesignDecisions](https://github.com/mining-design-decisions) and [JiraRepos](https://github.com/mining-design-decisions) datasets.
+
+### Training Procedure
+
+- **Optimizer:** AdamW with a Learning Rate of 2e-5
+- **Epochs:** 4
+- **Batch Size:** 8
+- **Validation Usage:** The validation set was used for early stopping; training halted if the Validation F1-score did not improve for two consecutive epochs to prevent overfitting. The test set was held out entirely for the final unbiased evaluation.
 
 ## Initial results
 
@@ -68,6 +75,9 @@ This model leverages the DistilBERT architecture, a distilled version of BERT th
 - **Test F1 Score:** 0.76
 - **Test Precision:** 0.72
 - **Test Recall:** 0.80
+
+### Interpretation
+The model is optimized for Recall (0.80) to ensure that software architects miss very few actual decisions. The lower Precision (0.72) is an intentional trade-off. The system acts as a broad discovery tool where human experts perform a final quick filter of false positives.
 
 ## Uses
 
@@ -99,3 +109,8 @@ The model can be integrated into:
 ### Ethical Considerations
 
 The training data is derived from specific open-source communities. This may introduce bias toward the development culture and documentation styles of those specific projects (e.g., Apache Foundation). Decisions documented in non-standard ways or by non-native English speakers may be under-represented.
+
+## Improvement Strategies
+1. **Domain-Specific Pre-training:** Utilizing a model like SEBERT, pre-trained on software engineering corpora, to handle technical jargon more effectively. 
+2. **Data Augmentation:** Using 'Back-Translation' (English to German and back) on the minority ADD samples to balance the dataset. 
+3. **Active Learning:** Implementing a UI feedback loop where users flag false positives to retrain the model.
