@@ -33,7 +33,9 @@ The core use cases supported by the system are:
 * **UC2: Batch Classification:** The user submits multiple issues for asynchronous ADD detection, enabling efficient large-scale processing.
 * **UC3: Keyword-Based ADD Search:** The user provides one or more keywords, and the system retrieves issues containing ADDs relevant to the queried topic.
 
-### Background: ADDs and Challenges in Issue Tracking Systems
+```sh
+
+```
 
 ADDs have come to be viewed as the foundational units of software architecture, reflecting a shift from describing systems primarily through components and connectors to understanding architecture as the outcome of decision-making processes. This decision-centric view highlights that architecture is shaped less by static structures than by the reasoning, constraints, and trade-offs that guide their creation. As Jansen and Bosch (2005) and Kruchten et al. (2006) note, ADDs persist as long-lived knowledge artifacts because they capture underlying rationales that remain relevant even as implementation details evolve.
 
@@ -41,7 +43,7 @@ Research has proposed several classifications of ADDs, typically distinguishing 
 
 The representation of architectural decisions has been explored through both structured and lightweight documentation models. Formal approaches, such as the Issue-Based Information System (IBIS), emphasize argumentation and the evaluation of alternatives. At the same time, pragmatic formats such as Architecture Decision Records (ADRs) aim to preserve essential information in a streamlined, developer-friendly way. These models underscore the importance of making architectural reasoning explicit, traceable, and accessible over time.
 
-Recent empirical studies show, however, that architectural knowledge remains widely distributed and highly dynamic in practice. Decisions often evolve incrementally and are scattered across various communication channels, complicating systematic analysis. This complexity has motivated the application of natural language processing and machine learning methods, with transformer-based models demonstrating promise in identifying ADDs within heterogeneous and unstructured development artifacts (Soliman et al., 2025). This emerging line of research lays the foundation for automated tools that support scalable architectural knowledge management.
+Recent empirical studies show that architectural knowledge is often implicit, where the rationale behind a decision is omitted in favor of implementation details. A primary challenge in Jira is linguistic noise: technical jargon, stack traces, and code fragments intermingle with natural language, making automated extraction difficult. Furthermore, the low prevalence of ADDs relative to the millions of issues in a repository creates a data sparsity problem, where architectural content is difficult to isolate from routine bug reports or feature requests.
 
 ### Organizational Goals and Leading Indicators
 
@@ -59,7 +61,7 @@ Achievement of these goals can be monitored using the following indicators:
 * **LI1**: Number of ADDs identified by the system per project.
 * **LI2**: Reduction in manual effort required to locate architectural reasoning.
 * **LI3**: Frequency of use of the ADD search interface.
-* **LI4**: Improvements in model performance across successive iterations.
+* **LI4**: Reduction in technical debt resolution time, measured by the time saved for developers when architectural rationale is pre-identified by the system.
 
 ### System Goals
 
@@ -98,14 +100,14 @@ The machine learning model developed for this project is expected to:
 * **FR3**: The system shall support keyword-based ADD searches.
 * **FR4**: The API shall expose endpoints for prediction and search.
 * **FR5**: The frontend shall allow users to submit issues and view results.
+* **FR6**: Data shall be validated through a Pandera schema.
+* **FR7**: The machine learning lifecycle shall be tracked with MLflow.
+* **FR8**: The system shall be deployable through a CI/CD pipeline.
+* **FR9**: System metrics shall be exposed through Prometheus and visualized in Grafana.
 
 **Non-Functional Requirements**
 
 * **NFR1**: The system shall maintain API responsiveness during inference.
-* **NFR2**: Data shall be validated through a Pandera schema.
-* **NFR3**: The machine learning lifecycle shall be tracked with MLflow.
-* **NFR4**: The system shall be deployable through a CI/CD pipeline.
-* **NFR5**: System metrics shall be exposed through Prometheus and visualized in Grafana.
 
 ### Specifications
 
@@ -113,7 +115,7 @@ The machine learning model developed for this project is expected to:
 
 | Requirement | Specification |
 | :--- | :--- |
-| FR1 | REST endpoint (`/predict`) returning JSON-formatted ADD predictions. |
+| FR1 | A Resource-Oriented REST endpoint (POST `/predictions`) following the Richardson Maturity Model Level 2, where requests create new prediction resources. |
 | FR2 | Background worker or asynchronous task manager for batch inference. |
 | FR3 | PostgreSQL full-text search or ZomboDB-based search index. |
 | FR4 | OpenAPI-compliant API documentation. |
@@ -130,8 +132,8 @@ The system relies on the following assumptions:
 
 * **A1**: Jira issue summaries and descriptions contain sufficient information to infer ADDs.
 * **A2**: The provided dataset is representative of typical ADD occurrence patterns.
-* **A3**: Users access the system through a web interface or programmatically via the API.
-* **A4**: Data stored in DVC is fully preprocessed prior to model training.
+* **A3**: The manual labels provided in the MiningDesignDecisions dataset are considered absolute ground truth for architectural intent.
+* **A4**: The technical documentation culture within the Apache ecosystem is sufficiently representative of general open-source software engineering discourse.
 * **A5**: The deployed model remains accessible to the inference service.
 
 ### Fault Tree Analysis of a Key Requirement
@@ -150,18 +152,27 @@ This section presents a Fault Tree Analysis (FTA) of the key non-functional requ
 * **F3: Inefficient Model or Infrastructure**
    Excessively large model size, absence of caching mechanisms, or insufficient container resources hinder responsive behavior.
 
+**Minimal Cut Sets (MCS)**
+Analysis reveals that the top event (API Unresponsiveness) occurs if any of the following basic events occur: {F1}, {F2}, or {F3}. Because F1 (Synchronous Execution) is a single-point failure, it represents the most critical cut set.
+
 **Conclusion**
-The FTA highlights the need for asynchronous execution, resource isolation, and efficient model loading strategies to ensure API responsiveness during inference. These insights directly influence architectural and deployment decisions adopted in subsequent tasks.
+Our architecture must specifically target the removal of the F1 cut set by implementing a producer-consumer pattern using background workers.
 
 ## Data Management and Preprocessing
 
 The project relies on the MiningDesignDecisions (MDD) database and the JiraRepos database provided in MongoDB (Maarleveld & Dekker, 2023). The MDD database contains manually annotated Architectural Design Decision (ADD) labels for a selected subset of issues, and each annotated entry includes three binary dimensions: existence, property, and executive. With a specific "has-label" tag, the annotation was created as part of the original research study. In contrast, the JiraRepos database contains the full corpus of approximately 2.8 million raw Jira issues across several software projects. Each issue includes a summary and a description, which together form the textual input used for model training. For our task, only issues appearing in the MDD annotation set serve as labeled data.
 
-To ensure reproducibility and proper versioning, all processed datasets were managed using Data Version Control (DVC). After extracting and merging labeled issues with their corresponding Jira entries, the resulting dataset was saved into a CSV file and tracked through DVC. The preprocessing step includes data cleaning, filtering, and transformation steps to prepare the textual fields for machine learning models. Jira descriptions often contain HTML markup, formatting tags, and large code or log fragments. To reduce noise, we removed the HTML elements and Jira-specific formatting, and irregular whitespace was normalized. Summary and description fields were converted to plain text, and issues lacking meaningful textual content were filtered out. During data integration, only about 6,225 issues with valid Boolean ADD labels were retained. Exploratory analysis of this retained subset revealed a significant class imbalance, with non-ADD issues outnumbering ADD-positive issues. This distributional imbalance highlighted the necessity of prioritizing metrics like the F1-score and Recall rather than simple Accuracy for model evaluation.
+To ensure reproducibility and proper versioning, all processed datasets were managed using Data Version Control (DVC). After extracting and merging labeled issues with their corresponding Jira entries, the resulting dataset was saved into a CSV file and tracked through DVC. The preprocessing step includes data cleaning, filtering, and transformation steps to prepare the textual fields for machine learning models. Jira descriptions often contain HTML markup, formatting tags, and large code or log fragments. To reduce noise, we removed the HTML elements and Jira-specific markup such as `{code}`, `{noformat}`, and `[~username]` tags. Irregular whitespace was normalized by converting non-breaking spaces, tab characters, and multiple consecutive newlines, often resulting from pasted stack traces, into single standard spaces. Summary and description fields were converted to plain text, and issues lacking meaningful textual content were filtered out. During data integration, only about 6,225 issues with valid Boolean ADD labels were retained. Exploratory analysis of this retained subset revealed a significant class imbalance, with non-ADD issues outnumbering ADD-positive issues. This distributional imbalance highlighted the necessity of prioritizing metrics like the F1-score and Recall rather than simple Accuracy for model evaluation.
+
+Initial exploration results showed that of the 6,225 samples, only approximately 15% were labeled as positive for ADDs, confirming a severe 1:6 class imbalance. Additionally, word count analysis revealed that ADD-positive issues are, on average, 40% longer than non-ADD issues.
 
 We also address potential mistakes and biases inherent in the data source. Since the dataset is derived exclusively from open-source Apache projects, it likely over-represents the development culture, terminology, and English-language documentation specific to that community. Consequently, the model may underperform on proprietary software or projects with different documentation standards.
 
 To guarantee data quality and implement a "design for mistakes" strategy, a schema-based validation step was implemented using the Pandera library (Bantilan, 2020). Pandera enforces constraints on column types, requiring that project identifiers and issue IDs are valid strings, ADD labels are boolean, and textual fields are properly defined. A global integrity rule ensures that at least one of the summaries or descriptions is non-empty. This validation framework serves as a robust error-handling mechanism: rather than crashing the pipeline upon encountering malformed data, the system automatically identifies and filters out non-conforming records, ensuring that the training stage proceeds only with valid, high-quality samples.
+
+To Design for Mistakes, we implemented: 
+1. Class Imbalance Mitigation: During training, we implemented Class Weighting in the loss function to penalize the model more heavily for misclassifying the minority (ADD) class. 
+2. Filtering Circuit Breaker: The Pandera schema automatically rejects issues with fewer than 10 tokens to prevent "ghost" issues from introducing noise into the training stage.
 
 ## Model Development and Performance Tracking
 
