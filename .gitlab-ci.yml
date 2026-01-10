@@ -31,7 +31,9 @@ build_app:
   script:
     - docker build -t "$CI_REGISTRY_IMAGE:app-latest" ./backend/api
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
-  privileged: true
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
