@@ -25,7 +25,7 @@ build_app:
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - cd backend/app
+    - cd backend/api
     - docker build -t "$CI_REGISTRY_IMAGE:app-latest" .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
 
