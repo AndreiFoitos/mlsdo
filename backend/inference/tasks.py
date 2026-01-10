@@ -4,8 +4,14 @@ import mlflow.pytorch
 import transformers
 from celery import Celery, Task
 
-celery_app = Celery("tasks", broker=os.environ.get('REDIS_URL', 'redis://redis:6379/0'), backend=os.environ.get('REDIS_URL'))
 
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+celery_app = Celery(
+    "tasks",
+    broker=REDIS_URL,
+    backend=REDIS_URL
+)
 class MLModelTask(Task):
     """Abstract Task to ensure the model and tokenizer are loaded once per worker."""
     _model = None

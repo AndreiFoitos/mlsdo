@@ -16,4 +16,4 @@ COPY --chown=1000:1000 ./backend/inference/tasks.py .
 
 ENV PATH="/opt/conda/bin:$PATH"
 
-CMD ["micromamba", "run", "-n", "base", "celery", "-A", "tasks", "worker", "--loglevel=info"]
+CMD ["micromamba", "run", "-n", "base", "celery", "-A", "backend.inference.tasks", "worker", "--loglevel=info"]
