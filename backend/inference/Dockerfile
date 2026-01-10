@@ -12,7 +12,7 @@ RUN micromamba install -y -n base -f environment.yml && \
 
 USER 1000
 
-COPY --clown=1000:1000 ./backend/inference/tasks.py .
+COPY --chown=1000:1000 ./backend/inference/tasks.py .
 
 ENV PATH="/opt/conda/bin:$PATH"
 

@@ -1,3 +1,11 @@
+stages:
+  - build
+  - test        # Security scans (SAST/Dependency) run here
+  - setup
+  - update
+  - training
+  - deploy
+
 include:
   - template: Jobs/SAST.gitlab-ci.yml
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
@@ -6,14 +14,6 @@ include:
 variables:
   VM_USER: "warpgate"
   DOCKER_DRIVER: overlay2
-
-stages:
-  - build
-  - test        # Security scans (SAST/Dependency) run here
-  - setup
-  - update
-  - training
-  - deploy
 
 build_app:
   stage: build
@@ -33,11 +33,15 @@ train_model:
   stage: training
   image: python:3.11
   script:
+    - cd backend || exit 1
     - pip install -r requirements.txt
-    - python data/training/ppl-train.py  
+    - python ../data/training/ppl-train.py
+
   rules:
   - changes:
-      - data/**/* - backend/**/* - docker-compose.yml
+      - data/**/* 
+      - backend/**/* 
+      - docker-compose.yml
 
 setup_infra:
   stage: setup

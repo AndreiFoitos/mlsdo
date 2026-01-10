@@ -76,7 +76,7 @@ services:
       - assignment
 
   mlflow:
-    build: ./mlflow-docker
+    build: ./mlflow
     ports:
       - "5000:5000"
     environment:
