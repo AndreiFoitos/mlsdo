@@ -1,7 +1,9 @@
 name: mlsdo-assignment
 services:
   app-api:
-    build: ./backend/app
+    build: 
+      context: .  
+      dockerfile: ./backend/api/Dockerfile
     ports:
       - "8080:8080"
     environment:
@@ -19,7 +21,9 @@ services:
         tag: "{{.Name}}"
 
   celery-worker:
-    build: ./app
+    build: 
+      context: .  
+      dockerfile: ./backend/inference/Dockerfile
     command: celery -A tasks worker --loglevel=info
     environment:
       - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
@@ -37,7 +41,9 @@ services:
         tag: "{{.Name}}"
 
   redis:
-    image: redis:alpine
+    image: redis:7
+    ports:
+      - "6379:6379"
     networks:
       - assignment
 
@@ -52,7 +58,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
@@ -60,6 +66,8 @@ services:
 
   grafana:
     image: grafana/grafana:latest
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
     ports:
       - "3000:3000"
     environment:
