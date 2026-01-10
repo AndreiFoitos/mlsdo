@@ -6,7 +6,7 @@ from celery.result import AsyncResult
 from prometheus_fastapi_instrumentator import Instrumentator
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
-
+# test
 celery_app = Celery(
     "tasks",
     broker=REDIS_URL,
