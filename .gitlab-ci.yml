@@ -31,12 +31,24 @@ build_app:
   script:
     - docker build -t "$CI_REGISTRY_IMAGE:app-latest" -f backend/api/Dockerfile .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
+gemnasium-python-dependency_scanning:
+  stage: test
+  image: registry.gitlab.com/security-products/gemnasium-python:6
+  script:
+    - /analyzer run .
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+semgrep-sast:
+  stage: test
+  image: registry.gitlab.com/security-products/semgrep:6
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login registry.gitlab.com -u gitlab-ci-token --password-stdin
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
 
 train_model:
   stage: training
@@ -45,15 +57,19 @@ train_model:
     - cd backend || exit 1
     - pip install -r requirements.txt
     - python ../data/training/ppl-train.py
-
   rules:
-  - changes:
-      - data/**/* 
-      - backend/**/* 
-      - docker-compose.yml
+    - changes:
+        - data/**/* 
+        - backend/**/* 
+        - docker-compose.yml
 
 setup_infra:
   stage: setup
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$CI_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H "$CI_SSH_HOST" >> ~/.ssh/known_hosts
   script:
     - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app"
     - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
