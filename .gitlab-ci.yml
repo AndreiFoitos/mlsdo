@@ -1,6 +1,6 @@
 stages:
   - build
-  - test        # Security scans (SAST/Dependency) run here
+  - test        
   - setup
   - update
   - training
