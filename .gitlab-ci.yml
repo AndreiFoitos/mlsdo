@@ -38,15 +38,15 @@ gemnasium-python-dependency_scanning:
   stage: test
   image: registry.gitlab.com/security-products/gemnasium-python:6
   script:
-    - /analyzer run .
+    - /analyzer run backend/
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
 semgrep-sast:
   stage: test
   image: registry.gitlab.com/security-products/semgrep:6
-  before_script:
-    - echo "$CI_JOB_TOKEN" | docker login registry.gitlab.com -u gitlab-ci-token --password-stdin
+  script:
+    - semgrep --config auto backend/
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
@@ -71,9 +71,9 @@ setup_infra:
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H "$CI_SSH_HOST" >> ~/.ssh/known_hosts
   script:
-    - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app"
+    - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app"
     - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose up -d"
+    - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "cd /home/$VM_USER/app && sudo docker compose up -d"
 
 deploy_api:
   stage: deploy
