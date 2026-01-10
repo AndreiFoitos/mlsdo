@@ -1,3 +1,13 @@
 pymongo
 pandas
 pandera
+fastapi
+uvicorn
+mlflow
+psycopg2-binary
+torch
+transformers
+pydantic
+celery
+redis
+prometheus-fastapi-instrumentator
