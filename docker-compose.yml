@@ -83,7 +83,7 @@ services:
       MLFLOW_S3_ENDPOINT_URL: http://minio-mlflow:9000
       AWS_ACCESS_KEY_ID: mlflow_access_key
       AWS_SECRET_ACCESS_KEY: mlflow_secret_key
-      POSTGRES_URL: postgresql+psycopg2://postgres:pw2@postgres-mlflow:5433/mlflow
+      POSTGRES_URL: postgresql+psycopg2://postgres:pw2@postgres-mlflow:5432/mlflow
     networks:
       - assignment
     depends_on:
