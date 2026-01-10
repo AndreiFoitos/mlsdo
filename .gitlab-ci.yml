@@ -29,7 +29,7 @@ build_app:
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" ./backend/api
+    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" -f backend/api/Dockerfile .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
   variables:
     DOCKER_HOST: tcp://docker:2375
