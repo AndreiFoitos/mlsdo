@@ -1,110 +1,54 @@
-import contextlib
 import os
-
 import fastapi
-import mlflow
-import pandas as pd
-import psycopg2
-import pydantic
-import torch
-import transformers
+from pydantic import BaseModel
+from celery import Celery
+from celery.result import AsyncResult
+from prometheus_fastapi_instrumentator import Instrumentator
 
-MODEL_NAME = "google/bert_uncased_L-2_H-128_A-2"
-db_connection = None
-model = None
-tokenizer = None
-device = None
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
 
+celery_app = Celery(
+    "tasks",
+    broker=REDIS_URL,
+    backend=REDIS_URL
+)
 
-class Review(pydantic.BaseModel):
-    title: str
-    text: str
+class IssueRequest(BaseModel):
+    summary: str
+    description: str
 
+class PredictionResponse(BaseModel):
+    task_id: str
+    status: str
 
-class PredictionResponse(pydantic.BaseModel):
-    sentiment: bool
-    probability: float
+app = fastapi.FastAPI(title="ADD Detection API")
 
+Instrumentator().instrument(app).expose(app)
 
-@contextlib.asynccontextmanager
-async def lifespan(app):
-    global db_connection, model, tokenizer, device
-    
-    # Database connection
-    db_url = os.environ.get('POSTGRES_URL', None)
-    if db_url is None:
-        raise ValueError('POSTGRES_URL environment variable not set')
-    db_connection = psycopg2.connect(db_url)
+@app.post('/predictions', status_code=202)
+async def predict_async(issue: IssueRequest) -> PredictionResponse:
+    """
+    Submits a prediction task to the Celery worker.
+    Returns 202 Accepted immediately to ensure responsiveness.
+    """
+    task = celery_app.send_task(
+        "tasks.classify_issue", 
+        args=[issue.summary, issue.description]
+    )
+    return PredictionResponse(task_id=str(task.id), status="PENDING")
 
-    # Create ml_ratings table if it doesn't exist
-    with db_connection.cursor() as cursor:
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ml_ratings (
-            title TEXT, 
-            text TEXT, 
-            sentiment BOOLEAN
-        )""")
-
-    # Tokenizer and device
-    tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
-    device = torch.device("cpu") # force CPU (in case GPU is default)
-
-    # MLflow model
-    mlflow_tracking_url = os.environ.get('MLFLOW_TRACKING_URL', None)
-    if mlflow_tracking_url is None:
-        raise ValueError('MLFLOW_TRACKING_URL environment variable not set')
-    mlflow.set_tracking_uri(mlflow_tracking_url)
-
-    model_name = os.environ.get('MLFLOW_MODEL_NAME')
-    model_version = os.environ.get('MLFLOW_MODEL_VERSION')
-    model = mlflow.pytorch.load_model(f"models:/{model_name}/{model_version}")
-
-    try:
-        yield
-    finally:
-        db_connection.close()
-
-
-app = fastapi.FastAPI(lifespan=lifespan)
-
+@app.get('/predictions/{task_id}')
+async def get_prediction_status(task_id: str):
+    """
+    Check the status or retrieve the result of an asynchronous task.
+    """
+    task_result = AsyncResult(task_id, app=celery_app)
+    return {
+        "task_id": task_id,
+        "status": task_result.status,
+        "result": task_result.result if task_result.ready() else None
+    }
 
 @app.get('/hello')
 async def say_hello():
     return {'message': 'hello'}
-
-
-@app.post('/predictions')
-def predict_and_store(review: Review) -> PredictionResponse:
-    global model, db_connection, tokenizer, device
-    if model is None:
-        raise ValueError("Model is not loaded")
-
-    # Tokenize the input text
-    tokenized = tokenizer(
-        f"{review.title}. {review.text}",
-        padding="max_length",
-        max_length=512,
-        truncation=True,
-        add_special_tokens=True,
-        return_tensors="pt"  # Return PyTorch tensors
-    )
-    
-    model = model.to(device)
-    tokenized = {key: value.to(device) for key, value in tokenized.items()}
-    model.eval()  # Ensure the model is in evaluation mode
-    with torch.no_grad():
-        out = model(**tokenized)
-        probabilities = torch.nn.functional.sigmoid(out.logits)
-        probability = probabilities.squeeze().item()
-        prediction = probabilities.round().squeeze().item()
-
-    sentiment = bool(prediction)
-
-    # Store prediction in the database
-    with db_connection.cursor() as cursor:
-        cursor.execute(
-            'INSERT INTO ml_ratings (title, text, sentiment) '
-            'VALUES (%s, %s, %s)',
-            (review.title, review.text, sentiment)
-        )
-    return PredictionResponse(sentiment=sentiment, probability=probability)
