@@ -29,3 +29,4 @@ dependencies:
     - mlflow
     - celery 
     - redis
+    - prometheus-fastapi-instrumentator
