@@ -27,3 +27,5 @@ dependencies:
     - pydantic
     - requests
     - mlflow
+    - celery 
+    - redis
