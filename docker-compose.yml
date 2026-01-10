@@ -72,7 +72,10 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      
+      - GF_SERVER_ROOT_URL=http://10.10.0.146:3000   # <-- VM IP address here
+    depends_on:
+      - prometheus
+      - loki
     networks:
       - assignment
 
