@@ -1,7 +1,7 @@
 name: mlsdo-assignment
 services:
   app-api:
-    build: ./app
+    build: ./backend/app
     ports:
       - "8080:8080"
     environment:
