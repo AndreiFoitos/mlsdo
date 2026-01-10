@@ -32,6 +32,8 @@ build_app:
     - docker build -t "$CI_REGISTRY_IMAGE:app-latest" ./backend/api
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
   privileged: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
 
 
 train_model:
