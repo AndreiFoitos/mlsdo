@@ -3,26 +3,44 @@ import typing
 import datasets
 import psycopg2
 import torch
+import torch.nn as nn 
 import torchmetrics
 import transformers
 import mlflow
 import numpy as np
+from sklearn.utils.class_weight import compute_class_weight
 
 required_env = ["POSTGRES_URL", "MLFLOW_TRACKING_URL", "MLFLOW_MODEL_NAME"]
 for env in required_env:
     if os.environ.get(env) is None:
         raise ValueError(f'{env} environment variable not set')
 
+# Hyperparameters (must be explicitly defined and logged)
 MODEL_NAME = "distilbert-base-uncased"
 LEARNING_RATE = 2e-5
 BATCH_SIZE = 8
 EPOCHS = 4
+MAX_LENGTH = 512
 LIMIT = "" 
 
 accuracy_metric = torchmetrics.Accuracy(task='binary')
 f1_metric = torchmetrics.F1Score(task='binary')
 precision_metric = torchmetrics.Precision(task='binary')
 recall_metric = torchmetrics.Recall(task='binary')
+
+class WeightedTrainer(transformers.Trainer):
+    def __init__(self, class_weights, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.class_weights = class_weights
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+        
+        loss_fct = nn.CrossEntropyLoss(weight=self.class_weights)
+        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
 
 class Issue:
     __slots__ = ('key', 'summary', 'description', 'is_add')
@@ -66,20 +84,22 @@ def load_model(model_name: str):
     return tokenizer, model
 
 def tokenize_issues(issues: list[Issue], tokenizer):
+    valid_issues = [i for i in issues if len((i.summary + i.description).split()) > 10]
+    
     tokenized = [
         tokenizer(
             f"{issue.summary}. {issue.description}",
             padding='max_length',
-            max_length=512,
+            max_length=MAX_LENGTH,
             truncation=True,
             add_special_tokens=True
         )
-        for issue in issues
+        for issue in valid_issues
     ]
     
     combined = [
         {'label': int(issue.is_add)} | text
-        for text, issue in zip(tokenized, issues)
+        for text, issue in zip(tokenized, valid_issues)
     ]
     return datasets.Dataset.from_list(combined)
 
@@ -97,35 +117,36 @@ def compute_metrics(eval_pred: transformers.EvalPrediction):
         'recall': recall_metric(preds_tensor, truth_tensor).item()
     }
 
-def train_model(model, training_data, validation_data):
+def train_model(model, training_data, validation_data, class_weights):
     training_args = transformers.TrainingArguments(
         output_dir='./training_logs',
         num_train_epochs=EPOCHS,
+        learning_rate=LEARNING_RATE, 
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         warmup_steps=100,
         weight_decay=0.01,
         logging_dir='./logs',
         logging_steps=10,
-        eval_strategy="epoch",
+        eval_strategy="epoch", 
         save_strategy="epoch",
-        load_best_model_at_end=True,
+        load_best_model_at_end=True, 
         metric_for_best_model="f1_score",
         use_cpu=False 
     )
 
-    trainer = transformers.Trainer(
+    trainer = WeightedTrainer(
+        class_weights=class_weights,
         model=model,
         args=training_args,
         train_dataset=training_data,
-        eval_dataset=validation_data,
+        eval_dataset=validation_data, 
         compute_metrics=compute_metrics
     )
     trainer.train()
     return trainer
 
 def split_dataset(dataset, test_size=0.15, val_size=0.15):
-    train_size = 1 - test_size - val_size
     mapping = dataset.train_test_split(test_size=(test_size + val_size))
     train = mapping['train']
     
@@ -140,7 +161,13 @@ def main():
     mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URL'))
     
     with mlflow.start_run():
-        mlflow.autolog()
+        mlflow.autolog(log_models=False)
+        mlflow.log_params({
+            "learning_rate": LEARNING_RATE,
+            "batch_size": BATCH_SIZE,
+            "epochs": EPOCHS,
+            "max_length": MAX_LENGTH
+        })
         
         print('1. Loading Data...')
         issues = load_data_from_db()
@@ -151,16 +178,27 @@ def main():
         print('2. Initializing Model...')
         tokenizer, model = load_model(MODEL_NAME)
         
-        print('3. Tokenizing Data...')
+        print('3. Tokenizing and Filtering Data...')
         dataset = tokenize_issues(issues, tokenizer)
         
-        print('4. Splitting Data...')
+        print('4. Splitting Data (70/15/15)...')
         train, val, test = split_dataset(dataset)
+
+        train_labels = [x['label'] for x in train]
+        weights = compute_class_weight(
+            class_weight='balanced', 
+            classes=np.unique(train_labels), 
+            y=train_labels
+        )
+        device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        class_weights = torch.tensor(weights, dtype=torch.float).to(device)
+        model.to(device)
+        print(f"Calculated Class Weights: {weights}")
         
         print('5. Training...')
-        trainer = train_model(model, train, val)
+        trainer = train_model(model, train, val, class_weights)
         
-        print('6. Evaluating on Test Set...')
+        print('6. Evaluating on Test Set (Unbiased)...')
         results = trainer.evaluate(test)
         print(results)
 
