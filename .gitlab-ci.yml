@@ -17,13 +17,15 @@ stages:
 
 build_app:
   stage: build
+  tags:
+    - docker
   image: docker:20.10.16
   services:
     - docker:20.10.16-dind
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - cd app
+    - cd backend/app
     - docker build -t "$CI_REGISTRY_IMAGE:app-latest" .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
 
@@ -34,10 +36,8 @@ train_model:
     - pip install -r requirements.txt
     - python data/training/ppl-train.py  
   rules:
-    - changes:
-        - data/**/* 
-        - data/training/**/* 
-        - app/**/* 
+  - changes:
+      - data/**/* - backend/**/* - docker-compose.yml
 
 setup_infra:
   stage: setup
