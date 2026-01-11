@@ -5,7 +5,7 @@ WORKDIR /app
 USER root
 RUN mkdir -p /app && chown -R 1000:1000 /app
 
-COPY environment.yml .
+COPY ../environment.yml .
 RUN micromamba install -y -n base -f environment.yml && micromamba clean --all --yes
 
 USER 1000

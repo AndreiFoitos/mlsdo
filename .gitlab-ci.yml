@@ -23,13 +23,14 @@ build_app:
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - cd backend/api
-    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" .
+    - cd .
+    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" -f backend/api/Dockerfile .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
   rules:
     - changes:
         - backend/api/**       
-        - backend/inference/** 
+        - backend/inference/**
+        - environment.yml
 
 setup_infra:
   stage: setup
