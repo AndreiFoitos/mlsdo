@@ -1,8 +1,7 @@
 stages:
   - build
-  - test        
+  - test
   - setup
-  - update
   - training
   - deploy
 
@@ -14,6 +13,7 @@ include:
 variables:
   VM_USER: "warpgate"
   DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""   
 
 build_app:
   stage: build
@@ -49,12 +49,12 @@ train_model:
   image: python:3.11
   script:
     - cd backend || exit 1
-    - pip install -r requirements.txt
+    - pip install --no-cache-dir -r requirements.txt
     - python ../data/training/ppl-train.py
   rules:
     - changes:
-        - data/**/* 
-        - backend/**/* 
+        - data/**/*
+        - backend/**/*
         - docker-compose.yml
 
 setup_infra:
@@ -67,10 +67,10 @@ setup_infra:
   script:
     - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app"
     - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
-    - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "cd /home/$VM_USER/app && sudo docker compose up -d"
+    - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "cd /home/$VM_USER/app && sudo docker compose up -d --no-recreate --remove-orphans"
 
 deploy_api:
   stage: deploy
   script:
     - ssh $CI_SSH_HOST "sudo docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose pull && sudo docker compose up -d"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose pull && sudo docker compose up -d --no-recreate --remove-orphans"
