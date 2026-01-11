@@ -117,3 +117,645 @@ to support monitoring and debugging.
 ## API Purpose and Functionality
 
 The FastAPI application serves as the primary interface for the ML system, providing Architectural Decision Documentation (ADD) detection for software project issues.
+
+### Core Endpoints: 
+
+```python
+POST /predictions              # Submit issue for ADD classification
+GET  /predictions/{task_id}    # Retrieve classification results
+GET  /hello                    # Health check endpoint
+GET  /metrics                  # Prometheus metrics (auto-exposed)
+```
+### Functionality Flow:
+
+1. Request Reception: User submits issue via POST /predictions with summary and description
+1. Input Validation: Pydantic automatically validates request schema
+1. Task Submission: API creates Celery task tasks.classify_issue with issue text
+1. Immediate Response: Returns HTTP 202 Accepted with task_id (non-blocking)
+1. Result Polling: User queries GET /predictions/{task_id} to check status
+1. Result Delivery: Once complete, returns ADD classification with confidence score
+
+### Response Example:
+
+```python
+{
+  "task_id": "a7f3c2e1-4b5d-6789-0abc-def123456789",
+  "status": "SUCCESS",
+  "result": {
+    "is_add": true,
+    "probability": 0.8734,
+    "label": "ADD"
+  }
+}
+```
+
+##  Asynchronous Processing Implementation
+
+The system implements asynchronous processing using the Celery distributed task queue with Redis as the message broker.
+
+### Architecture Benefits:
+
+1. Non-blocking API: Users receive immediate responses with task IDs
+1. Scalability: Multiple Celery workers can process tasks in parallel
+1. Reliability: Redis persists tasks, enabling retry mechanisms
+1. Resource efficiency: Long-running ML inference doesn't block API threads
+
+### Task Flow:
+
+1. FastAPI receives prediction request
+1. Creates Celery task with review text
+1. Task pushed to Redis queue
+1. Available Celery worker picks up task
+1. Worker performs inference using loaded model
+1. Result stored in PostgreSQL with task ID
+1. User retrieves result via task ID
+
+##  Frontend and API Interaction
+
+The current system architecture does not include a dedicated frontend application. The API is designed to be consumed by direct HTTP clients and future frontend applications.
+
+
+## Integration of Prometheus, Loki, and Grafana
+
+The monitoring stack provides comprehensive observability across all system components.
+
+### Component Roles:
+#### Prometheus (Port 9090):
+
+- Scrapes metrics from instrumented applications
+- Stores time-series data with labels
+- Configured via prometheus/prometheus.yml
+
+- Metrics collected:
+
+    - API request rates (requests/second)
+    - Response latencies (p50, p95, p99)
+    - Error rates (4xx, 5xx responses)
+    - Task queue lengths
+    - Model inference duration
+
+
+
+#### Loki (Port 3100):
+
+- Aggregates logs from Docker containers
+- Uses Docker's JSON file logging driver
+- Each container tagged with service name
+- Indexes logs by timestamp and labels
+- Enables full-text log search
+
+#### Grafana (Port 3000):
+
+- Unified dashboard for metrics and logs
+- Pre-configured data sources:
+
+    - Prometheus for metrics visualization
+    - Loki for log exploration
+
+
+- Default credentials: admin/admin
+- Provisioned via grafana/provisioning/ directory
+
+#### Data Flow:
+
+1. FastAPI exports metrics via prometheus-fastapi-instrumentator
+1. Prometheus scrapes metrics endpoint every 15 seconds
+1. Docker containers write logs to stdout/stderr
+1. Loki collects logs via Docker logging driver
+1. Grafana queries both data sources for unified view
+
+
+## Monitoring Strategy
+
+###  Logs
+
+#### Log Sources:
+
+- API logs: Request/response details, errors, warnings
+- Celery worker logs: Task execution, model loading, inference times
+- MLflow logs: Model registry operations, artifact storage
+- Database logs: Connection issues, slow queries
+
+
+###  Tracked Metrics
+
+####  API Performance Metrics:
+ 
+| Metric | Type | Description | Relevance |
+|--------|------|-------------|-----------|
+| `http_requests_total` | Counter | Total HTTP requests | Track API usage patterns |
+| `http_request_duration_seconds` | Histogram | Request latency distribution | Identify performance bottlenecks |
+| `http_requests_in_progress` | Gauge | Concurrent requests | Monitor load and capacity |
+| `http_response_status` | Counter | Response codes (2xx, 4xx, 5xx) | Track error rates |
+
+#### ML System Metrics:
+
+| Metric | Type | Description | Relevance |
+|--------|------|-------------|-----------|
+| `celery_tasks_total` | Counter | Total tasks submitted | Monitor inference volume |
+| `celery_task_duration_seconds` | Histogram | Task processing time | Detect model performance issues |
+| `celery_worker_active_tasks` | Gauge | Tasks in progress | Monitor worker utilization |
+| `model_inference_duration_seconds` | Histogram | Pure model inference time | Track model efficiency |
+| `model_load_duration_seconds` | Histogram | Model loading time | Optimize model caching |
+
+#### Infrastructure Metrics:
+
+
+| Metric | Type | Description | Relevance |
+|--------|------|-------------|-----------|
+| `redis_connected_clients` | Gauge | Active Redis connections | Monitor queue health |
+| `postgres_active_connections` | Gauge | Database connections | Detect connection leaks |
+| `container_memory_usage_bytes` | Gauge | Memory consumption | Prevent OOM errors |
+| `container_cpu_usage_percent` | Gauge | CPU utilization | Right-size container resources |
+
+### Alerting Rules
+
+#### Critical Alerts:
+
+- API error rate > 5% for 5 minutes
+- Average response time > 2 seconds for 10 minutes
+- Celery worker count = 0
+- Database connection failures
+
+#### Warning Alerts:
+
+- Queue length > 100 tasks
+- Model inference time > 5 seconds
+- Memory usage > 80%
+
+
+
+# Pipeline Architecture
+
+##  CI/CD Strategy Overview
+
+The CI/CD pipeline is implemented using GitLab CI/CD, orchestrating automated build, test, and deployment processes. The strategy follows a multi-stage pipeline approach with conditional execution based on code changes.
+
+### Pipeline Diagram:
+
+![Component Diagram](cicddiag.drawio.png)
+
+### Key Principles:
+
+1. Infrastructure as Code: All deployment configurations in version control
+1. Automated Testing: Validation at each stage (currently minimal, room for improvement)
+1. Conditional Execution: Stages trigger only when relevant files change
+1. Container-based Deployment: Consistent environments from dev to production
+1. Centralized Secrets: Environment variables managed via GitLab CI/CD settings
+
+## Pipeline Stages
+
+### Stage 1: BUILD
+
+Purpose: Build and publish Docker images to GitLab Container Registry
+
+#### Jobs:
+
+build_app (API + Celery Application)
+
+```yaml
+build_app:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" -f backend/api/Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE:app-latest"
+  rules:
+    - changes:
+        - backend/api/**
+        - backend/inference/**
+        - environment.yml
+
+```
+
+- Trigger: Changes to API code, inference code, or dependencies
+- Dockerfile: backend/api/Dockerfile
+- Output: Image tagged as app-latest in registry
+- Contents: FastAPI application, Celery tasks, Python dependencies
+
+build_train_image (Training Pipeline)
+
+```yaml
+build_train_image:
+  stage: build
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:train-latest" -f backend/inference/Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE:train-latest"
+  rules:
+    - changes:
+        - data/training/**
+        - backend/inference/**
+        - environment.yml
+
+```
+
+- Trigger: Changes to training scripts, inference code, or dependencies
+- Dockerfile: backend/inference/Dockerfile
+- Output: Image tagged as train-latest
+- Contents: Training scripts, model code, PyTorch, transformers
+
+
+#### Security in Build Stage:
+
+- Uses GitLab's built-in CI_REGISTRY_PASSWORD and CI_REGISTRY_USER
+- Credentials never hardcoded in .gitlab-ci.yml
+- Docker-in-Docker (DinD) for isolated builds
+
+### Stage 2: SETUP
+Purpose: Deploy infrastructure and services to target VM
+
+#### Job:
+
+setup_infra
+```yaml
+setup_infra:
+  stage: setup
+  script:
+    - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose down && sudo docker compose up -d"
+  rules:
+    - when: always
+```
+
+#### Actions:
+
+1. Sync files: rsync transfers docker-compose.yml, configs to VM
+1. Recreate services: Stops and restarts all Docker Compose services
+
+1. Initialize infrastructure:
+
+    - PostgreSQL databases (reviews_db, MLflow metadata)
+    - Redis task queue
+    - MLflow tracking server
+    - MinIO object storage
+    - Monitoring stack (Prometheus, Loki, Grafana)
+
+
+
+### Stage 3: UPDATE (Data Management)
+Purpose: Load and preprocess data into the system
+#### Job: update_data
+```yaml
+update_data:
+  stage: update
+  script:
+    - ssh $CI_SSH_HOST "docker run --name ppl-load_data \
+        --network mlsdo-assignment_assignment \
+        -v /home/$VM_USER/app/data:/data \
+        -e POSTGRES_URL='$POSTGRES_URL' \
+        -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' \
+        -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' \
+        $CI_REGISTRY_IMAGE:app-latest \
+        python /app/data/preprocessing/ppl-load_data.py"
+  rules:
+    - changes:
+        - data/preprocessing/**
+        - backend/inference/**
+```
+#### Data Management Script Functionality:
+The system implements a three-stage data pipeline tracked by DVC:
+
+##### Stage 1: Data Extraction
+
+```python
+# Connects to MongoDB containing JIRA issues and labels
+client = MongoClient("mongodb://root:my-secret-pw@localhost:27017")
+labels_db = client["MiningDesignDecisions"]
+jira_db = client["JiraRepos"]
+
+# Query labeled issues
+cursor = labels.find({
+    "tags": "has-label",
+    "existence": {"$exists": True},
+    "property": {"$exists": True},
+    "executive": {"$exists": True}
+})
+
+# Join with JIRA issue data
+for label in cursor:
+    project, issue_id = label_id.split("-", 1)
+    issue = jira_db[project].find_one({"id": issue_id})
+    
+    # Clean HTML tags and whitespace
+    description = clean_text(fields.get("description", ""))
+    summary = clean_text(fields.get("summary", ""))
+    
+    # Collect labeled records
+    records.append({
+        "project": project,
+        "label_id": label_id,
+        "description": description,
+        "summary": summary,
+        "existence": bool(label.get("existence", False)),
+        "property": bool(label.get("property", False)),
+        "executive": bool(label.get("executive", False))
+    })
+
+# Export to CSV
+df.to_csv("data/issue_with_labels.csv", index=False)
+```
+##### Key Features:
+
+- Extracts issues from MongoDB databases (MiningDesignDecisions + JiraRepos)
+- Joins labels with JIRA issue content
+- Cleans HTML tags using regex: TAG_RE = re.compile(r"<[^>]+>")
+- Filters empty issues (both summary and description blank)
+- Outputs labeled dataset with three label types: existence, property, executive
+
+##### Stage 2: Data Validation (pandera_check.py)
+```python
+schema = DataFrameSchema({
+    "project": Column(pa.String, nullable=False),
+    "label_id": Column(pa.String, nullable=False),
+    "summary": Column(pa.String, Check.str_length(min_value=0)),
+    "description": Column(pa.String, Check.str_length(min_value=0)),
+    "existence": Column(pa.Bool),
+    "property": Column(pa.Bool),
+    "executive": Column(pa.Bool)
+},
+checks=Check(
+    lambda df: ~((df["summary"].str.len() == 0) & 
+                 (df["description"].str.len() == 0)),
+    error="summary and description both empty"
+))
+
+schema.validate(df)
+```
+
+###### Validation Rules:
+
+- Schema enforcement: correct data types for all columns
+- Non-null constraints on project and label_id
+- String length validation on text fields
+- Data quality check: prevents records with both empty summary and description
+- Ensures boolean labels (existence, property, executive) are properly typed
+
+##### Stage 3: Database Loading (ppl-load_data.py)
+```python
+def load_csv_to_postgres(csv_file_path, db_config):
+    df = pd.read_csv(csv_file_path)
+    
+    # Create table schema
+    cursor.execute("""
+    CREATE TABLE processed_issues (
+        issue_key VARCHAR(50) PRIMARY KEY,
+        summary TEXT,
+        description TEXT,
+        label_existence BOOLEAN,
+        label_executive BOOLEAN,
+        label_property BOOLEAN,
+        project VARCHAR(50)
+    )
+    """)
+    
+    # Bulk insert using psycopg2 extras
+    data_tuples = [
+        (row.label_id, row.summary, row.description,
+         row.existence, row.executive, row.property, row.project)
+        for row in df.itertuples(index=False)
+    ]
+    
+    extras.execute_values(cursor, query, data_tuples)
+```
+##### Database Schema:
+
+- Table: processed_issues
+- Primary Key: issue_key (e.g., "Apache-13343357")
+- Text Fields: summary, description (unlimited length)
+- Labels: Three boolean fields for ADD classification types
+- Metadata: Project identifier for tracking source
+- Bulk Loading: Uses psycopg2.extras.execute_values() for efficient batch inserts
+
+##### DVC Integration:
+```yaml
+# dvc.yaml
+stages:
+  preprocess:
+    cmd: python data/preprocessing/preprocessing.py
+    deps:
+      - data/preprocessing/preprocessing.py
+    outs:
+      - data/issue_with_labels.csv
+```
+
+- Preprocessed data is versioned via DVC (hash: 5537ca73561f385c05b6bb3f02202555)
+- Enables data versioning parallel to code versioning
+- .dvc/cache stores historical data versions
+
+##### Execution Pattern:
+
+- Runs as one-off container (--name ppl-load_data)
+- Mounts data directory for file access
+- Connects to internal Docker network
+- Container removed after completion
+
+
+### Stage 4: TRAINING (Model Training)
+Purpose: Train ML models using versioned data
+
+#### Job: train_model
+```yaml
+train_model:
+  stage: training
+  script:
+    - ssh $CI_SSH_HOST "docker run -d --name ppl-train \
+        --network mlsdo-assignment_assignment \
+        -e POSTGRES_URL='$POSTGRES_URL' \
+        -e REDIS_URL='$REDIS_URL' \
+        -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' \
+        -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' \
+        $CI_REGISTRY_IMAGE:train-latest"
+  rules:
+    - changes:
+        - data/training/**
+        - backend/inference/**
+        - environment.yml
+```
+##### Model Training Script Functionality:
+
+1. Data retrieval: Fetches training data from PostgreSQL
+1. Model training: Fine-tunes transformer model (e.g., BERT, DistilBERT)
+1. Hyperparameter tracking: Logs parameters (learning rate, batch size) to MLflow
+1. Metrics logging: Records training/validation accuracy, F1-score, loss
+1. Model registration: Saves trained model to MLflow Model Registry
+1. Artifact storage: Stores model weights to MinIO via MLflow
+
+##### MLflow Integration:
+```python
+# Pseudocode from training script
+import mlflow
+
+mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI'))
+with mlflow.start_run():
+    mlflow.log_params({"learning_rate": 2e-5, "epochs": 3})
+    
+    # Train model
+    model.train()
+    
+    mlflow.log_metrics({"accuracy": 0.92, "f1_score": 0.89})
+    mlflow.pytorch.log_model(model, "model")
+    mlflow.register_model(f"runs:/{run_id}/model", "ReviewClassifier")
+```
+##### Execution Characteristics:
+
+- Runs detached (-d) for long-running training jobs
+- Connects to Redis for potential distributed training coordination
+- Outputs logged to Docker container logs (accessible via Loki)
+- Limitation: No explicit completion notification in pipeline
+
+##### Model Versioning:
+
+- Each training run creates a new MLflow experiment run
+- Models tagged with version numbers (v1, v2, etc.)
+- Production models promoted via MLflow Model Registry stages (Staging → Production)
+- Enables A/B testing and rollback capabilities
+
+
+### Stage 5: DEPLOY
+Purpose: Deploy the trained API service to production
+#### Job: deploy_api
+```yaml
+deploy_api:
+  stage: deploy
+  script:
+    - ssh $CI_SSH_HOST "docker pull $CI_REGISTRY_IMAGE:app-latest"
+    - ssh $CI_SSH_HOST "docker stop app-api || true"
+    - ssh $CI_SSH_HOST "docker rm app-api || true"
+    - ssh $CI_SSH_HOST "docker run -d --name app-api \
+        --network mlsdo-assignment_assignment \
+        -e POSTGRES_URL='$POSTGRES_URL' \
+        -e REDIS_URL='$REDIS_URL' \
+        -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' \
+        -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' \
+        -p 8080:8080 \
+        $CI_REGISTRY_IMAGE:app-latest"
+  rules:
+    - changes:
+        - backend/api/**
+        - backend/inference/**
+        - environment.yml
+```
+
+##### Deployment Process:
+
+1. Pull latest image: Ensures most recent build is available
+1. Graceful shutdown: Stops existing app-api container
+1. Clean up: Removes old container
+1. Deploy new version: Starts fresh container with updated code
+1. Port mapping: Exposes port 8080 to host
+1. Network attachment: Connects to internal Docker network
+
+
+## Security Measures
+### Secret Management
+GitLab CI/CD Variables:
+All sensitive credentials are stored as protected and masked CI/CD variables in GitLab:
+| Variable | Purpose | Scope |
+|----------|---------|-------|
+| `POSTGRES_URL` | Database connection string | Protected, Masked |
+| `REDIS_URL` | Task queue connection | Protected, Masked |
+| `MLFLOW_TRACKING_URL` | MLflow server endpoint | Protected |
+| `MLFLOW_MODEL_NAME` | Model registry identifier | Protected |
+| `CI_REGISTRY_PASSWORD` | Container registry authentication | Built-in, Masked |
+| `CI_SSH_HOST` | Deployment target VM | Protected |
+
+
+#### Security Properties:
+
+- Protected: Only available on protected branches (main, production)
+- Masked: Values hidden in job logs
+- Never committed: Credentials never appear in .gitlab-ci.yml or code
+
+### SSH Access Control
+#### Authentication:
+```yaml
+image: finalgene/openssh
+```
+
+- Pipeline uses SSH for remote command execution
+- SSH keys configured via GitLab CI/CD SSH keys settings
+- Private key stored securely in GitLab
+- Public key added to VM's authorized_keys
+
+#### VM User Configuration:
+
+- Dedicated user warpgate with limited sudo permissions
+- Sudo access restricted to Docker commands only
+- No password-based authentication
+
+### Container Registry Security
+#### GitLab Container Registry:
+
+- Built-in authentication via GitLab tokens
+- gitlab-ci-token with job-specific permissions
+- Images scoped to project (not publicly accessible)
+- Automatic token rotation
+
+#### Build Stage Authentication:
+```yaml
+before_script:
+  - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+```  
+#### Deployment Stage Authentication:
+```yaml
+before_script:
+  - ssh $CI_SSH_HOST "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
+```
+####  Network Isolation
+##### Docker Network Security:
+
+- Internal network mlsdo-assignment_assignment isolates services
+- Only API container exposes external port (8080)
+- Database and Redis not accessible from outside
+- Service-to-service communication within Docker network
+
+#### Production Hardening Recommendations:
+
+1. Database credentials: Move from docker-compose.yml to environment variables
+
+```yaml
+   # Current (insecure)
+   POSTGRES_PASSWORD: pw1
+   
+   # Recommended
+   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # From .env file or secrets
+```
+
+1. TLS/SSL: Enable HTTPS for API endpoints
+1. Firewall rules: Restrict VM access to specific IP ranges
+1. Secrets rotation: Implement periodic credential rotation
+1. Image scanning: Add vulnerability scanning to build stage
+
+```yaml   scan_image:
+     stage: build
+     script:
+       - trivy image $CI_REGISTRY_IMAGE:app-latest
+```
+#### Dependency Management
+##### Supply Chain Security:
+
+1. Pinned versions: environment.yml specifies exact versions
+
+```yaml
+   - torch==2.2.0
+   - celery==5.6.2
+   - redis==4.5.5
+```
+
+1. Trusted sources: Only PyPI and conda-forge channels
+1. Docker base images: Official Python images with specific tags
+
+#### Access Control
+#### Role-Based Access:
+
+- GitLab project permissions control who can trigger pipelines
+- Protected branches prevent unauthorized deployments
+- Manual approval gates could be added for production deployments
+
+#### Audit Trail:
+
+- All pipeline executions logged in GitLab
+- Git commit history provides change tracking
+- MLflow tracks model lineage and experiment metadata
