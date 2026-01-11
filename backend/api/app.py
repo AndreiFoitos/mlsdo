@@ -51,4 +51,4 @@ async def get_prediction_status(task_id: str):
 
 @app.get('/hello')
 async def say_hello():
-    return {'message': 'hello'}
+    return {'message': 'hello'}# test deploy
