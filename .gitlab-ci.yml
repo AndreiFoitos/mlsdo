@@ -76,7 +76,7 @@ train_model:
     - ssh $CI_SSH_HOST "sudo docker pull $CI_REGISTRY_IMAGE:train-latest"
   script:
     - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
-    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-assignment_assignment -e POSTGRES_URL='$POSTGRES_URL' -e REDIS_URL='$REDIS_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' $CI_REGISTRY_IMAGE:train-latest"
+    - ssh $CI_SSH_HOST "sudo docker run -d --name ppl-train --network mlsdo-assignment_assignment -e POSTGRES_URL='$POSTGRES_URL' -e REDIS_URL='$REDIS_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' $CI_REGISTRY_IMAGE:train-latest"
   rules:
     - changes:
         - data/training/**
