@@ -17,6 +17,7 @@ services:
     depends_on:
       - postgres-ml
       - redis
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
@@ -37,6 +38,7 @@ services:
       - postgres-ml
       - redis
       - mlflow
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
@@ -48,6 +50,7 @@ services:
       - "6379:6379"
     networks:
       - assignment
+    restart: unless-stopped
 
   loki:
     image: grafana/loki:latest
@@ -56,6 +59,7 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - assignment
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
@@ -65,6 +69,7 @@ services:
       - "9090:9090"
     networks:
       - assignment
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
@@ -73,21 +78,18 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Admin credentials
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin 
-
-      # Warp / subpath fix
+      - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev/@warpgate
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_SERVER_ENABLE_GZIP=true
-
     networks:
       - assignment
     depends_on:
       - prometheus
       - loki
+    restart: unless-stopped
 
   mlflow:
     build: ./mlflow
@@ -103,6 +105,7 @@ services:
     depends_on:
       - postgres-mlflow
       - minio-mlflow
+    restart: unless-stopped
 
   postgres-mlflow:
     image: postgres:latest
@@ -113,6 +116,7 @@ services:
       - "5433:5432" 
     networks:
       - assignment
+    restart: unless-stopped
 
   minio-mlflow:
     image: minio/minio:latest
@@ -122,7 +126,7 @@ services:
       - MINIO_ROOT_PASSWORD=mlflow_secret_key
     networks:
       - assignment
-
+    restart: unless-stopped
 
   postgres-ml:
     image: postgres:latest
@@ -134,6 +138,7 @@ services:
       - "5432:5432"
     networks:
       - assignment
+    restart: unless-stopped
 
   mongo:
     image: mongo:latest
@@ -144,6 +149,7 @@ services:
       - "27017:27017"
     networks:
       - assignment
+    restart: unless-stopped
 
 networks:
   assignment:
