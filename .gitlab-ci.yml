@@ -63,7 +63,7 @@ update_data:
     - !reference [.update_app_image, before_script]
   script:
     - ssh $CI_SSH_HOST "sudo docker stop ppl-load_data || true && sudo docker rm ppl-load_data || true"
-    - ssh $CI_SSH_HOST "sudo docker run --name ppl-load_data --network mlsdo-lab5_lab5 -v /home/$VM_USER/app/data:/data -e POSTGRES_URL='postgresql://postgres:pw1@postgres-ml:5432/reviews_db' -e MLFLOW_TRACKING_URL='http://mlflow:5000' -e MLFLOW_MODEL_NAME='add_detection_model' $CI_REGISTRY_IMAGE:app-latest python /app/data/preprocessing/ppl-load_data.py"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-load_data --network assignment -v /home/$VM_USER/app/data:/data -e POSTGRES_URL='$POSTGRES_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' $CI_REGISTRY_IMAGE:app-latest python /app/data/preprocessing/ppl-load_data.py"
   rules:
     - changes:
         - data/preprocessing/**            
@@ -76,7 +76,7 @@ train_model:
     - ssh $CI_SSH_HOST "sudo docker pull $CI_REGISTRY_IMAGE:train-latest"
   script:
     - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
-    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-lab5_lab5 -e POSTGRES_URL='postgresql://postgres:pw1@postgres-ml:5432/reviews_db' -e REDIS_URL='redis://redis:6379/0' -e MLFLOW_TRACKING_URL='http://mlflow:5000' -e MLFLOW_MODEL_NAME='add_detection_model' $CI_REGISTRY_IMAGE:train-latest"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network assignment -e POSTGRES_URL='$POSTGRES_URL' -e REDIS_URL='$REDIS_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' $CI_REGISTRY_IMAGE:train-latest"
   rules:
     - changes:
         - data/training/**
@@ -89,7 +89,7 @@ deploy_api:
     - !reference [.update_app_image, before_script]
   script:
     - ssh $CI_SSH_HOST "sudo docker stop app-api || true && sudo docker rm app-api || true"
-    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network mlsdo-lab5_lab5 -e POSTGRES_URL='postgresql://postgres:pw1@postgres-ml:5432/reviews_db' -e REDIS_URL='redis://redis:6379/0' -e MLFLOW_TRACKING_URL='http://mlflow:5000' -e MLFLOW_MODEL_NAME='add_detection_model' -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest"
+    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network assignment -e POSTGRES_URL='$POSTGRES_URL' -e REDIS_URL='$REDIS_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest"
   rules:
     - changes:
         - backend/api/**
