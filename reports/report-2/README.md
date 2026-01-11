@@ -46,7 +46,6 @@ Data, which serves as the source of issue descriptions and summaries to be analy
 
 ## Level 2: Container Diagram
 
-
 ![Container Diagram](ContainerDiagram.png)
 
 *Figure 2: Container Diagram*
@@ -56,24 +55,15 @@ main deployable units and shows how responsibilities are distributed across them
 The system consists of five primary containers:
 
 - Backend API: It acts as the central entry point for all client requests. It exposes REST
-endpoints for single prediction, batch submission, status queries and keyword-based search.
-
-
+   endpoints for single prediction, batch submission, status queries and keyword-based search.
 - Asynchronous Processing: It handles long-running and computationally intensive tasks, such
-as batch inference, outside the request-response cycle to ensure API responsiveness.
-
-
+   as batch inference, outside the request-response cycle to ensure API responsiveness.
 - Inference Service: It executes machine learning inference by loading the model from MLflow
-Model Registry and storing prediction results.
-
-
+   Model Registry and storing prediction results.
 - PostgreSQL: It stores issues, prediction results, batch task metadata and supports keyword-
-based search.
-
-
+   based search.
 - Monitoring Stack: It collects metrics and logs from backend services and provides a unified
-observability dashboard.
-
+   observability dashboard.
 
 When a user submits a request via the frontend, it is forwarded to the Backend API. Lightweight
 operations (e.g., single prediction or search) are handled directly, while batch requests are delegated to the asynchronous processing component. The inference service retrieves the trained model from
@@ -92,9 +82,8 @@ to the host machine, while all other services are accessible exclusively via the
 This deployment model ensures clear service boundaries, controlled network access, and reproducible
 infrastructure across environments while remaining consistent with the Container Diagram abstraction.
 
-
-
 ## Level 3: Component Diagram
+
 ![Component Diagram](ComponentDiagram.png)
 *Figure 3: Component Diagram*
 
@@ -102,21 +91,13 @@ The component Diagram shown in Figure 3,  focuses on the internal structure of t
 container and highlights the key components that implement the system’s functionality.
 The Backend API is composed of the following logical components:
 
-
 - API Controller: It defines REST endpoints and handles incoming HTTP requests from the
-web frontend.
-
-
+   web frontend.
 - Prediction Service: It manages synchronous prediction requests and communicates with the
-inference service.
-
-
+   inference service.
 - Search Service: It handles keyword-based retrieval of ADD-related issues using the database.
-
-
 - Async Dispatcher: It submits batch predictions to the asynchronous processing mechanism
-and enables non-blocking request handling.
-
+   and enables non-blocking request handling.
 
 Once received a request, the API Controller routes it to the appropriate internal service. Batch
 prediction requests are forwarded to the Async Dispatcher, which decouples long-running inference
@@ -135,15 +116,13 @@ This separation of concerns ensures that the API serves both as a stable interfa
 coordination layer that delegates computation-heavy tasks to downstream services without blocking
 client requests.
 
-
-
 # Component Interactions
 
 ## API Purpose and Functionality
 
 The FastAPI application serves as the primary interface for the ML system, providing Architectural Decision Documentation (ADD) detection for software project issues.
 
-### Core Endpoints: 
+### Core Endpoints:
 
 ```python
 POST /predictions              # Submit issue for ADD classification
@@ -151,14 +130,15 @@ GET  /predictions/{task_id}    # Retrieve classification results
 GET  /hello                    # Health check endpoint
 GET  /metrics                  # Prometheus metrics (auto-exposed)
 ```
+
 ### Functionality Flow:
 
 1. Request Reception: User submits issue via POST /predictions with summary and description
-1. Input Validation: Pydantic automatically validates request schema
-1. Task Submission: API creates Celery task tasks.classify_issue with issue text
-1. Immediate Response: Returns HTTP 202 Accepted with task_id (non-blocking)
-1. Result Polling: User queries GET /predictions/{task_id} to check status
-1. Result Delivery: Once complete, returns ADD classification with confidence score
+2. Input Validation: Pydantic automatically validates request schema
+3. Task Submission: API creates Celery task tasks.classify_issue with issue text
+4. Immediate Response: Returns HTTP 202 Accepted with task_id (non-blocking)
+5. Result Polling: User queries GET /predictions/{task_id} to check status
+6. Result Delivery: Once complete, returns ADD classification with confidence score
 
 ### Response Example:
 
@@ -173,6 +153,7 @@ GET  /metrics                  # Prometheus metrics (auto-exposed)
   }
 }
 ```
+
 ### API–Model Interaction in the Architectural Diagrams
 
 As illustrated in Figures 2 and 3, the Backend API does not directly embed the machine learning model
@@ -185,7 +166,7 @@ rollbacks, and experimentation without requiring changes to the API layer itself
 highlight MLflow as an external dependency responsible for model lifecycle management rather than
 a tightly coupled internal component.
 
-##  Asynchronous Processing Implementation
+## Asynchronous Processing Implementation
 
 ### Asynchronous Processing in the Architectural View
 
@@ -198,29 +179,29 @@ By visualizing asynchronous task submission and worker-based execution as indepe
 the diagrams emphasize how non-blocking request handling is achieved and how the system can scale
 horizontally by increasing the number of Celery workers without modifying the API.
 
-
 The system implements asynchronous processing using the Celery distributed task queue with Redis as the message broker.
 
 ### Architecture Benefits:
 
 1. Non-blocking API: Users receive immediate responses with task IDs
-1. Scalability: Multiple Celery workers can process tasks in parallel
-1. Reliability: Redis persists tasks, enabling retry mechanisms
-1. Resource efficiency: Long-running ML inference doesn't block API threads
+2. Scalability: Multiple Celery workers can process tasks in parallel
+3. Reliability: Redis persists tasks, enabling retry mechanisms
+4. Resource efficiency: Long-running ML inference doesn't block API threads
 
 ### Task Flow:
 
 1. FastAPI receives prediction request
-1. Creates Celery task with review text
-1. Task pushed to Redis queue
-1. Available Celery worker picks up task
-1. Worker performs inference using loaded model
-1. Result stored in PostgreSQL with task ID
-1. User retrieves result via task ID
+2. Creates Celery task with review text
+3. Task pushed to Redis queue
+4. Available Celery worker picks up task
+5. Worker performs inference using loaded model
+6. Result stored in PostgreSQL with task ID
+7. User retrieves result via task ID
 
-##  Frontend and API Interaction
+## Frontend and API Interaction
 
 The current system architecture does not include a dedicated frontend application. The API is designed to be consumed by direct HTTP clients and future frontend applications.
+
 ### Client Interaction Perspective
 
 In the System Context Diagram (Figure 1), the frontend is represented abstractly as an external user
@@ -230,7 +211,6 @@ any future web interface, CLI tool, or third-party system would communicate with
 
 This abstraction ensures that client–API interaction patterns are documented independently of
 frontend implementation details, aligning with the C4 model’s emphasis on stable system boundaries.
-
 
 ## Integration of Prometheus, Loki, and Grafana
 
@@ -245,25 +225,22 @@ Although represented as a logical group, each component operates independently a
 through well-defined interfaces, enabling metrics-based monitoring, centralized log analysis, and
 cross-component observability across the entire system.
 
-
 The monitoring stack provides comprehensive observability across all system components.
 
 ### Component Roles:
+
 #### Prometheus (Port 9090):
 
 - Scrapes metrics from instrumented applications
 - Stores time-series data with labels
 - Configured via prometheus/prometheus.yml
-
 - Metrics collected:
 
-    - API request rates (requests/second)
-    - Response latencies (p50, p95, p99)
-    - Error rates (4xx, 5xx responses)
-    - Task queue lengths
-    - Model inference duration
-
-
+   - API request rates (requests/second)
+   - Response latencies (p50, p95, p99)
+   - Error rates (4xx, 5xx responses)
+   - Task queue lengths
+   - Model inference duration
 
 #### Loki (Port 3100):
 
@@ -278,9 +255,8 @@ The monitoring stack provides comprehensive observability across all system comp
 - Unified dashboard for metrics and logs
 - Pre-configured data sources:
 
-    - Prometheus for metrics visualization
-    - Loki for log exploration
-
+   - Prometheus for metrics visualization
+   - Loki for log exploration
 
 - Default credentials: admin/admin
 - Provisioned via grafana/provisioning/ directory
@@ -288,15 +264,14 @@ The monitoring stack provides comprehensive observability across all system comp
 #### Data Flow:
 
 1. FastAPI exports metrics via prometheus-fastapi-instrumentator
-1. Prometheus scrapes metrics endpoint every 15 seconds
-1. Docker containers write logs to stdout/stderr
-1. Loki collects logs via Docker logging driver
-1. Grafana queries both data sources for unified view
-
+2. Prometheus scrapes metrics endpoint every 15 seconds
+3. Docker containers write logs to stdout/stderr
+4. Loki collects logs via Docker logging driver
+5. Grafana queries both data sources for unified view
 
 ## Monitoring Strategy
 
-###  Logs
+### Logs
 
 #### Log Sources:
 
@@ -305,11 +280,10 @@ The monitoring stack provides comprehensive observability across all system comp
 - MLflow logs: Model registry operations, artifact storage
 - Database logs: Connection issues, slow queries
 
+### Tracked Metrics
 
-###  Tracked Metrics
+#### API Performance Metrics:
 
-####  API Performance Metrics:
- 
 | Metric | Type | Description | Relevance |
 |--------|------|-------------|-----------|
 | `http_requests_total` | Counter | Total HTTP requests | Track API usage patterns |
@@ -328,7 +302,6 @@ The monitoring stack provides comprehensive observability across all system comp
 | `model_load_duration_seconds` | Histogram | Model loading time | Optimize model caching |
 
 #### Infrastructure Metrics:
-
 
 | Metric | Type | Description | Relevance |
 |--------|------|-------------|-----------|
@@ -352,11 +325,9 @@ The monitoring stack provides comprehensive observability across all system comp
 - Model inference time > 5 seconds
 - Memory usage > 80%
 
-
-
 # Pipeline Architecture
 
-##  CI/CD Strategy Overview
+## CI/CD Strategy Overview
 
 The CI/CD pipeline is implemented using GitLab CI/CD, orchestrating automated build, test, and deployment processes. The strategy follows a multi-stage pipeline approach with conditional execution based on code changes.
 
@@ -372,7 +343,6 @@ Subsequent stages manage data ingestion and preprocessing (UPDATE), model traini
 relevant stages are triggered based on changes in code, data, or configuration files, minimizing
 unnecessary pipeline executions while maintaining deployment consistency.
 
-
 ### Pipeline Diagram:
 
 ![Component Diagram](cicddiag.drawio.png)
@@ -380,10 +350,10 @@ unnecessary pipeline executions while maintaining deployment consistency.
 ### Key Principles:
 
 1. Infrastructure as Code: All deployment configurations in version control
-1. Automated Testing: Validation at each stage (currently minimal, room for improvement)
-1. Conditional Execution: Stages trigger only when relevant files change
-1. Container-based Deployment: Consistent environments from dev to production
-1. Centralized Secrets: Environment variables managed via GitLab CI/CD settings
+2. Automated Testing: Validation at each stage (currently minimal, room for improvement)
+3. Conditional Execution: Stages trigger only when relevant files change
+4. Container-based Deployment: Consistent environments from dev to production
+5. Centralized Secrets: Environment variables managed via GitLab CI/CD settings
 
 ## Pipeline Stages
 
@@ -438,7 +408,6 @@ build_train_image:
 - Output: Image tagged as train-latest
 - Contents: Training scripts, model code, PyTorch, transformers
 
-
 #### Security in Build Stage:
 
 - Uses GitLab's built-in CI_REGISTRY_PASSWORD and CI_REGISTRY_USER
@@ -446,11 +415,13 @@ build_train_image:
 - Docker-in-Docker (DinD) for isolated builds
 
 ### Stage 2: SETUP
+
 Purpose: Deploy infrastructure and services to target VM
 
 #### Job:
 
 setup_infra
+
 ```yaml
 setup_infra:
   stage: setup
@@ -464,21 +435,21 @@ setup_infra:
 #### Actions:
 
 1. Sync files: rsync transfers docker-compose.yml, configs to VM
-1. Recreate services: Stops and restarts all Docker Compose services
+2. Recreate services: Stops and restarts all Docker Compose services
+3. Initialize infrastructure:
 
-1. Initialize infrastructure:
-
-    - PostgreSQL databases (reviews_db, MLflow metadata)
-    - Redis task queue
-    - MLflow tracking server
-    - MinIO object storage
-    - Monitoring stack (Prometheus, Loki, Grafana)
-
-
+   - PostgreSQL databases (reviews_db, MLflow metadata)
+   - Redis task queue
+   - MLflow tracking server
+   - MinIO object storage
+   - Monitoring stack (Prometheus, Loki, Grafana)
 
 ### Stage 3: UPDATE (Data Management)
+
 Purpose: Load and preprocess data into the system
+
 #### Job: update_data
+
 ```yaml
 update_data:
   stage: update
@@ -496,7 +467,9 @@ update_data:
         - data/preprocessing/**
         - backend/inference/**
 ```
+
 #### Data Management Script Functionality:
+
 The system implements a three-stage data pipeline tracked by DVC:
 
 ##### Stage 1: Data Extraction
@@ -538,6 +511,7 @@ for label in cursor:
 # Export to CSV
 df.to_csv("data/issue_with_labels.csv", index=False)
 ```
+
 ##### Key Features:
 
 - Extracts issues from MongoDB databases (MiningDesignDecisions + JiraRepos)
@@ -547,6 +521,7 @@ df.to_csv("data/issue_with_labels.csv", index=False)
 - Outputs labeled dataset with three label types: existence, property, executive
 
 ##### Stage 2: Data Validation (pandera_check.py)
+
 ```python
 schema = DataFrameSchema({
     "project": Column(pa.String, nullable=False),
@@ -575,6 +550,7 @@ schema.validate(df)
 - Ensures boolean labels (existence, property, executive) are properly typed
 
 ##### Stage 3: Database Loading (ppl-load_data.py)
+
 ```python
 def load_csv_to_postgres(csv_file_path, db_config):
     df = pd.read_csv(csv_file_path)
@@ -601,6 +577,7 @@ def load_csv_to_postgres(csv_file_path, db_config):
     
     extras.execute_values(cursor, query, data_tuples)
 ```
+
 ##### Database Schema:
 
 - Table: processed_issues
@@ -611,6 +588,7 @@ def load_csv_to_postgres(csv_file_path, db_config):
 - Bulk Loading: Uses psycopg2.extras.execute_values() for efficient batch inserts
 
 ##### DVC Integration:
+
 ```yaml
 # dvc.yaml
 stages:
@@ -633,11 +611,12 @@ stages:
 - Connects to internal Docker network
 - Container removed after completion
 
-
 ### Stage 4: TRAINING (Model Training)
+
 Purpose: Train ML models using versioned data
 
 #### Job: train_model
+
 ```yaml
 train_model:
   stage: training
@@ -655,16 +634,18 @@ train_model:
         - backend/inference/**
         - environment.yml
 ```
+
 ##### Model Training Script Functionality:
 
 1. Data retrieval: Fetches training data from PostgreSQL
-1. Model training: Fine-tunes transformer model (e.g., BERT, DistilBERT)
-1. Hyperparameter tracking: Logs parameters (learning rate, batch size) to MLflow
-1. Metrics logging: Records training/validation accuracy, F1-score, loss
-1. Model registration: Saves trained model to MLflow Model Registry
-1. Artifact storage: Stores model weights to MinIO via MLflow
+2. Model training: Fine-tunes transformer model (e.g., BERT, DistilBERT)
+3. Hyperparameter tracking: Logs parameters (learning rate, batch size) to MLflow
+4. Metrics logging: Records training/validation accuracy, F1-score, loss
+5. Model registration: Saves trained model to MLflow Model Registry
+6. Artifact storage: Stores model weights to MinIO via MLflow
 
 ##### MLflow Integration:
+
 ```python
 # Pseudocode from training script
 import mlflow
@@ -680,6 +661,7 @@ with mlflow.start_run():
     mlflow.pytorch.log_model(model, "model")
     mlflow.register_model(f"runs:/{run_id}/model", "ReviewClassifier")
 ```
+
 ##### Execution Characteristics:
 
 - Runs detached (-d) for long-running training jobs
@@ -694,10 +676,12 @@ with mlflow.start_run():
 - Production models promoted via MLflow Model Registry stages (Staging → Production)
 - Enables A/B testing and rollback capabilities
 
-
 ### Stage 5: DEPLOY
+
 Purpose: Deploy the trained API service to production
+
 #### Job: deploy_api
+
 ```yaml
 deploy_api:
   stage: deploy
@@ -723,15 +707,16 @@ deploy_api:
 ##### Deployment Process:
 
 1. Pull latest image: Ensures most recent build is available
-1. Graceful shutdown: Stops existing app-api container
-1. Clean up: Removes old container
-1. Deploy new version: Starts fresh container with updated code
-1. Port mapping: Exposes port 8080 to host
-1. Network attachment: Connects to internal Docker network
-
+2. Graceful shutdown: Stops existing app-api container
+3. Clean up: Removes old container
+4. Deploy new version: Starts fresh container with updated code
+5. Port mapping: Exposes port 8080 to host
+6. Network attachment: Connects to internal Docker network
 
 ## Security Measures
+
 ### Secret Management
+
 GitLab CI/CD Variables:
 All sensitive credentials are stored as protected and masked CI/CD variables in GitLab:
 | Variable | Purpose | Scope |
@@ -743,7 +728,6 @@ All sensitive credentials are stored as protected and masked CI/CD variables in 
 | `CI_REGISTRY_PASSWORD` | Container registry authentication | Built-in, Masked |
 | `CI_SSH_HOST` | Deployment target VM | Protected |
 
-
 #### Security Properties:
 
 - Protected: Only available on protected branches (main, production)
@@ -751,7 +735,9 @@ All sensitive credentials are stored as protected and masked CI/CD variables in 
 - Never committed: Credentials never appear in .gitlab-ci.yml or code
 
 ### SSH Access Control
+
 #### Authentication:
+
 ```yaml
 image: finalgene/openssh
 ```
@@ -768,6 +754,7 @@ image: finalgene/openssh
 - No password-based authentication
 
 ### Container Registry Security
+
 #### GitLab Container Registry:
 
 - Built-in authentication via GitLab tokens
@@ -776,16 +763,21 @@ image: finalgene/openssh
 - Automatic token rotation
 
 #### Build Stage Authentication:
+
 ```yaml
 before_script:
   - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-```  
+```
+
 #### Deployment Stage Authentication:
+
 ```yaml
 before_script:
   - ssh $CI_SSH_HOST "docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
 ```
-####  Network Isolation
+
+#### Network Isolation
+
 ##### Docker Network Security:
 
 - Internal network mlsdo-assignment_assignment isolates services
@@ -793,29 +785,8 @@ before_script:
 - Database and Redis not accessible from outside
 - Service-to-service communication within Docker network
 
-#### Production Hardening Recommendations:
-
-1. Database credentials: Move from docker-compose.yml to environment variables
-
-```yaml
-   # Current (insecure)
-   POSTGRES_PASSWORD: pw1
-   
-   # Recommended
-   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # From .env file or secrets
-```
-
-1. TLS/SSL: Enable HTTPS for API endpoints
-1. Firewall rules: Restrict VM access to specific IP ranges
-1. Secrets rotation: Implement periodic credential rotation
-1. Image scanning: Add vulnerability scanning to build stage
-
-```yaml   scan_image:
-     stage: build
-     script:
-       - trivy image $CI_REGISTRY_IMAGE:app-latest
-```
 #### Dependency Management
+
 ##### Supply Chain Security:
 
 1. Pinned versions: environment.yml specifies exact versions
@@ -827,9 +798,10 @@ before_script:
 ```
 
 1. Trusted sources: Only PyPI and conda-forge channels
-1. Docker base images: Official Python images with specific tags
+2. Docker base images: Official Python images with specific tags
 
 #### Access Control
+
 #### Role-Based Access:
 
 - GitLab project permissions control who can trigger pipelines
