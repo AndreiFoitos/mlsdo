@@ -252,6 +252,11 @@ The monitoring stack provides comprehensive observability across all system comp
 
 #### Grafana (Port 3000):
 
+![Grafana](grafana.jpeg)
+*Figure 4: Grafana Interface*
+
+Figure 4 shows an example Grafana dashboard panel used to monitor API traffic in real time. The gauge visualization displays the current value of the http_requests_total metric collected by Prometheus, providing immediate insight into request volume handled by the Backend API. This visualization enables operators to quickly assess system load and detect abnormal traffic patterns or sudden spikes in usage. By querying Prometheus directly and presenting the data through Grafana, the dashboard demonstrates how metrics are transformed into actionable operational insights, supporting performance monitoring, capacity planning, and early detection of potential reliability issues within the deployed system.
+
 - Unified dashboard for metrics and logs
 - Pre-configured data sources:
 
@@ -346,6 +351,7 @@ unnecessary pipeline executions while maintaining deployment consistency.
 ### Pipeline Diagram:
 
 ![Component Diagram](cicddiag.drawio.png)
+*Figure 5: CI/CD Diagram*
 
 ### Key Principles:
 
