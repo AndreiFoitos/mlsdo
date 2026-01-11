@@ -80,10 +80,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev/@warpgate
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_SERVER_ENABLE_GZIP=true
     networks:
       - assignment
     depends_on:
