@@ -1,76 +1,74 @@
+variables:
+  VM_USER: "warpgate"
+
+image: finalgene/openssh
+
 stages:
   - build
-  - test
   - setup
+  - update
   - training
   - deploy
 
-include:
-  - template: Jobs/SAST.gitlab-ci.yml
-  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-  - template: Jobs/Secret-Detection.gitlab-ci.yml
-
-variables:
-  VM_USER: "warpgate"
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""   
+.update_app_image:
+  before_script:
+    - ssh $CI_SSH_HOST "sudo docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
+    - ssh $CI_SSH_HOST "sudo docker pull $CI_REGISTRY_IMAGE:app-latest"
 
 build_app:
   stage: build
-  tags:
-    - docker
   image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" -f backend/api/Dockerfile .
+    - cd app
+    - docker build -t "$CI_REGISTRY_IMAGE:app-latest" .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
-
-gemnasium-python-dependency_scanning:
-  stage: test
-  image: registry.gitlab.com/security-products/gemnasium-python:6
-  script:
-    - /analyzer run backend/
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
-
-semgrep-sast:
-  stage: test
-  image: registry.gitlab.com/security-products/semgrep:6
-  script:
-    - semgrep --config auto backend/
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
-
-train_model:
-  stage: training
-  image: python:3.11
-  script:
-    - cd backend || exit 1
-    - pip install --no-cache-dir -r requirements.txt
-    - python ../data/training/ppl-train.py
-  rules:
     - changes:
-        - data/**/*
-        - backend/**/*
-        - docker-compose.yml
+        - app/**
 
 setup_infra:
   stage: setup
-  before_script:
-    - mkdir -p ~/.ssh
-    - echo "$CI_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H "$CI_SSH_HOST" >> ~/.ssh/known_hosts
   script:
-    - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app"
+    - 'which rsync || ( apk add --update rsync )'
+    - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app && sudo chown $VM_USER:$VM_USER /home/$VM_USER/app"
     - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
-    - ssh -o StrictHostKeyChecking=no "$CI_SSH_HOST" "cd /home/$VM_USER/app && sudo docker compose up -d --no-recreate --remove-orphans"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose down && sudo docker compose up -d"
+
+update_data:
+  stage: update
+  before_script:
+    - !reference [.update_app_image, before_script]
+  script:
+    - ssh $CI_SSH_HOST "sudo docker stop ppl-load_data || true && sudo docker rm ppl-load_data || true"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-load_data --network mlsdo-lab5_lab5 -v /home/$VM_USER/app/data:/data $CI_REGISTRY_IMAGE:app-latest python ppl-load_data.py"
+  rules:
+    - changes:
+        - data/**
+
+train_model:
+  stage: training
+  before_script:
+    - !reference [.update_app_image, before_script]
+  script:
+    - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-lab5_lab5 $CI_REGISTRY_IMAGE:app-latest python ppl-train.py"
+  rules:
+    - changes:
+        - data/**
+        - app/**
+        - environment.yml
 
 deploy_api:
   stage: deploy
+  before_script:
+    - !reference [.update_app_image, before_script]
   script:
-    - ssh $CI_SSH_HOST "sudo docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose pull && sudo docker compose up -d --no-recreate --remove-orphans"
+    - ssh $CI_SSH_HOST "sudo docker stop app-api || true && sudo docker rm app-api || true"
+    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network mlsdo-lab5_lab5 -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest python -m fastapi run app.py --host 0.0.0.0 --port 8080 --app app"
+  rules:
+    - changes:
+        - app/**
