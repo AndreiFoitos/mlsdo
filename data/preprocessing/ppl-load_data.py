@@ -58,9 +58,4 @@ if __name__ == "__main__":
         'host': 'localhost',
         'port': 5432
     }
-    load_csv_to_postgres("data/issue_with_labels.csv", DB_CONFIG)# test update
-# trigger update_data
-# trigger update_data
-# trigger update_data
-# trigger update_data
-# trigger update_data
+    load_csv_to_postgres("data/issue_with_labels.csv", DB_CONFIG)

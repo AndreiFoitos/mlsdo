@@ -55,8 +55,4 @@ def classify_issue(self, summary, description):
         "is_add": bool(prediction == 1), 
         "probability": float(confidence),
         "label": "ADD" if prediction == 1 else "NON-ADD"
-    }# trigger build_train_image
-# trigger build_train_image
-# trigger build_train_image
-# trigger build_train_image
-# trigger build_train_image
+    }
