@@ -53,3 +53,5 @@ async def get_prediction_status(task_id: str):
 async def say_hello():
     return {'message': 'hello'}
 
+# trigger build_app
+# trigger deploy_api

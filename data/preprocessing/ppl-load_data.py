@@ -59,3 +59,4 @@ if __name__ == "__main__":
         'port': 5432
     }
     load_csv_to_postgres("data/issue_with_labels.csv", DB_CONFIG)
+# trigger update_data
