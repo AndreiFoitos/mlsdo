@@ -73,8 +73,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin         
-      - GF_SERVER_ROOT_URL=http://10.10.0.146:3000  
-      - GF_SECURITY_ALLOW_ORIGINS=http://10.10.0.146:3000,http://localhost:3000,http://127.0.0.1:3000
+      - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev 
+      - GF_SECURITY_ALLOW_ORIGINS=https://mlops.digital-lab.dev,http://10.10.0.146:3000,http://localhost:3000,http://127.0.0.1:3000
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_SECURITY_COOKIE_SAMESITE=none
     networks:
