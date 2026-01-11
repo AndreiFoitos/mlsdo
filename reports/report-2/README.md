@@ -81,6 +81,18 @@ MLflow, performs predictions, and persists results to the database. Metrics and 
 backend and inference services are continuously collected by the monitoring stack, enabling system
 monitoring and debugging.
 
+### Deployed Infrastructure Context
+
+Although Figure 2 abstracts deployment details, all containers shown in the diagram are deployed on a
+single virtual machine and orchestrated using Docker Compose. Each container (API, Celery workers,
+Inference service, PostgreSQL, Redis, MLflow, MinIO, Prometheus, Loki, and Grafana) runs as an isolated
+Docker service within the same internal Docker network. Only the Backend API and Grafana expose ports
+to the host machine, while all other services are accessible exclusively via the internal network.
+
+This deployment model ensures clear service boundaries, controlled network access, and reproducible
+infrastructure across environments while remaining consistent with the Container Diagram abstraction.
+
+
 
 ## Level 3: Component Diagram
 ![Component Diagram](ComponentDiagram.png)
@@ -110,6 +122,19 @@ Once received a request, the API Controller routes it to the appropriate interna
 prediction requests are forwarded to the Async Dispatcher, which decouples long-running inference
 tasks from the API’s request-handling path. Throughout this process, metrics and logs are generated
 to support monitoring and debugging.
+
+### API Responsibilities as Reflected in the Architecture
+
+Figure 3 clarifies the functional responsibilities of the Backend API by decomposing it into components
+that directly correspond to its externally exposed endpoints. The API Controller represents the REST
+interface responsible for request validation and routing, while the Prediction Service, Search Service,
+and Async Dispatcher encapsulate the core business logic behind synchronous predictions, keyword-based
+search, and batch processing respectively.
+
+This separation of concerns ensures that the API serves both as a stable interface for clients and as a
+coordination layer that delegates computation-heavy tasks to downstream services without blocking
+client requests.
+
 
 
 # Component Interactions
@@ -148,8 +173,31 @@ GET  /metrics                  # Prometheus metrics (auto-exposed)
   }
 }
 ```
+### API–Model Interaction in the Architectural Diagrams
+
+As illustrated in Figures 2 and 3, the Backend API does not directly embed the machine learning model
+but instead interacts with it through a dedicated inference workflow. The Prediction Service delegates
+inference requests to the inference execution logic, which dynamically loads the currently active model
+version from the MLflow Model Registry.
+
+This architectural separation allows the API to remain model-agnostic, enabling model updates,
+rollbacks, and experimentation without requiring changes to the API layer itself. The diagrams thus
+highlight MLflow as an external dependency responsible for model lifecycle management rather than
+a tightly coupled internal component.
 
 ##  Asynchronous Processing Implementation
+
+### Asynchronous Processing in the Architectural View
+
+The asynchronous processing mechanism is explicitly reflected in the Container and Component diagrams.
+The Async Dispatcher component shown in Figure 3 represents the architectural boundary between
+request handling and long-running computation. In Figure 2, this decoupling is reinforced by the
+presence of a message broker (Redis) and separate worker containers responsible for task execution.
+
+By visualizing asynchronous task submission and worker-based execution as independent components,
+the diagrams emphasize how non-blocking request handling is achieved and how the system can scale
+horizontally by increasing the number of Celery workers without modifying the API.
+
 
 The system implements asynchronous processing using the Celery distributed task queue with Redis as the message broker.
 
@@ -173,9 +221,30 @@ The system implements asynchronous processing using the Celery distributed task 
 ##  Frontend and API Interaction
 
 The current system architecture does not include a dedicated frontend application. The API is designed to be consumed by direct HTTP clients and future frontend applications.
+### Client Interaction Perspective
+
+In the System Context Diagram (Figure 1), the frontend is represented abstractly as an external user
+or HTTP client interacting with the system through RESTful API calls. While no dedicated frontend
+application is currently deployed, the diagram intentionally models this interaction to capture how
+any future web interface, CLI tool, or third-party system would communicate with the Backend API.
+
+This abstraction ensures that client–API interaction patterns are documented independently of
+frontend implementation details, aligning with the C4 model’s emphasis on stable system boundaries.
 
 
 ## Integration of Prometheus, Loki, and Grafana
+
+### Observability Components in the Architectural Diagrams
+
+The Container Diagram (Figure 2) groups Prometheus, Loki, and Grafana into a unified monitoring stack
+to emphasize their collective role in system observability. Prometheus is responsible for scraping
+metrics exposed by the Backend API and worker services, Loki aggregates logs emitted by all containers,
+and Grafana acts as the visualization layer that correlates metrics and logs.
+
+Although represented as a logical group, each component operates independently and communicates
+through well-defined interfaces, enabling metrics-based monitoring, centralized log analysis, and
+cross-component observability across the entire system.
+
 
 The monitoring stack provides comprehensive observability across all system components.
 
@@ -290,6 +359,19 @@ The monitoring stack provides comprehensive observability across all system comp
 ##  CI/CD Strategy Overview
 
 The CI/CD pipeline is implemented using GitLab CI/CD, orchestrating automated build, test, and deployment processes. The strategy follows a multi-stage pipeline approach with conditional execution based on code changes.
+
+### CI/CD Pipeline Flow Description
+
+The CI/CD pipeline follows a linear, multi-stage execution model that progresses from image building
+to deployment. Conceptually, the pipeline starts with the BUILD stage, where application and training
+images are created and pushed to the container registry. This is followed by SETUP, which ensures that
+all infrastructure services are running on the target VM.
+
+Subsequent stages manage data ingestion and preprocessing (UPDATE), model training and registration
+(TRAINING), and finally API deployment (DEPLOY). Conditional execution rules ensure that only the
+relevant stages are triggered based on changes in code, data, or configuration files, minimizing
+unnecessary pipeline executions while maintaining deployment consistency.
+
 
 ### Pipeline Diagram:
 
