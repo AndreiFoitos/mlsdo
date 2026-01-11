@@ -76,6 +76,7 @@ services:
       - GF_SERVER_ROOT_URL=http://10.10.0.146:3000   
       - GF_SECURITY_ALLOW_EMBEDDING=true             
       - GF_SECURITY_COOKIE_SAMESITE=none
+      - GF_SECURITY_ALLOW_ORIGINS=http://10.10.0.146:3000,http://localhost:3000
     networks:
       - assignment
 
