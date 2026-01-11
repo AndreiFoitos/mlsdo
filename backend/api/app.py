@@ -56,3 +56,5 @@ async def say_hello():
 # trigger deploy_api
 # trigger build_app
 # trigger deploy_api
+# trigger build_app
+# trigger deploy_api

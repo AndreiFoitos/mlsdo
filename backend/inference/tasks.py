@@ -57,3 +57,4 @@ def classify_issue(self, summary, description):
         "label": "ADD" if prediction == 1 else "NON-ADD"
     }# trigger build_train_image
 # trigger build_train_image
+# trigger build_train_image
