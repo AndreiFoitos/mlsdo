@@ -64,7 +64,7 @@ services:
     networks:
       - assignment
 
-  grafana:
+    grafana:
     image: grafana/grafana:latest
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -72,6 +72,11 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin         
+      - GF_SERVER_ROOT_URL=http://10.10.0.146:3000  
+      - GF_SECURITY_ALLOW_ORIGINS=http://10.10.0.146:3000,http://localhost:3000,http://127.0.0.1:3000
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SECURITY_COOKIE_SAMESITE=none
     networks:
       - assignment
 
