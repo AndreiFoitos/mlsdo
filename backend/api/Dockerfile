@@ -11,6 +11,7 @@ RUN micromamba install -y -n base -f environment.yml && micromamba clean --all -
 USER 1000
 
 COPY ./backend/api ./backend/api
+COPY ./data/preprocessing ./data/preprocessing
 
 ENV REDIS_URL=redis://redis:6379/0
 ENV PATH="/opt/conda/bin:$PATH"
