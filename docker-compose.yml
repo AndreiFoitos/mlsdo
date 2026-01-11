@@ -72,7 +72,10 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin         
+      - GF_SECURITY_ADMIN_PASSWORD=admin 
+
+      - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
 
     networks:
       - assignment
