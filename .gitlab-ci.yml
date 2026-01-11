@@ -23,12 +23,27 @@ build_app:
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - cd .
     - docker build -t "$CI_REGISTRY_IMAGE:app-latest" -f backend/api/Dockerfile .
     - docker push "$CI_REGISTRY_IMAGE:app-latest"
   rules:
     - changes:
-        - backend/api/**       
+        - backend/api/**
+        - backend/inference/**
+        - environment.yml
+
+build_train_image:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:train-latest" -f backend/inference/Dockerfile .
+    - docker push "$CI_REGISTRY_IMAGE:train-latest"
+  rules:
+    - changes:
+        - data/training/**
         - backend/inference/**
         - environment.yml
 
@@ -57,15 +72,15 @@ update_data:
 train_model:
   stage: training
   before_script:
-    - !reference [.update_app_image, before_script]
+    - ssh $CI_SSH_HOST "sudo docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
+    - ssh $CI_SSH_HOST "sudo docker pull $CI_REGISTRY_IMAGE:train-latest"
   script:
     - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
-    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-lab5_lab5 $CI_REGISTRY_IMAGE:app-latest python backend/inference/ppl-train.py"
+    - ssh $CI_SSH_HOST "sudo docker run --name ppl-train --network mlsdo-lab5_lab5 $CI_REGISTRY_IMAGE:train-latest python /app/data/training/ppl-train.py"
   rules:
     - changes:
-        - data/**
-        - backend/api/**
-        - backend/inference/**   
+        - data/training/**
+        - backend/inference/**
         - environment.yml
 
 deploy_api:
@@ -74,7 +89,7 @@ deploy_api:
     - !reference [.update_app_image, before_script]
   script:
     - ssh $CI_SSH_HOST "sudo docker stop app-api || true && sudo docker rm app-api || true"
-    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network mlsdo-lab5_lab5 -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest python -m uvicorn backend.api.app:app --host 0.0.0.0 --port 8080"
+    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network mlsdo-lab5_lab5 -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest"
   rules:
     - changes:
         - backend/api/**
