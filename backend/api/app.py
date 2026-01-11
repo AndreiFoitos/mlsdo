@@ -54,3 +54,5 @@ async def say_hello():
     return {'message': 'hello'}# test deploy
 # trigger build_app
 # trigger deploy_api
+# trigger build_app
+# trigger deploy_api
