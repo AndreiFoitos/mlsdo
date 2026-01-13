@@ -11,3 +11,5 @@ pydantic
 celery
 redis
 prometheus-fastapi-instrumentator
+pytest
+requests
