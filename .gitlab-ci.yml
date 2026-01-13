@@ -88,8 +88,7 @@ deploy_api:
   before_script:
     - !reference [.update_app_image, before_script]
   script:
-    - ssh $CI_SSH_HOST "sudo docker stop app-api || true && sudo docker rm app-api || true"
-    - ssh $CI_SSH_HOST "sudo docker run -d --name app-api --network mlsdo-assignment_assignment -e POSTGRES_URL='$POSTGRES_URL' -e REDIS_URL='$REDIS_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' -p 8080:8080 $CI_REGISTRY_IMAGE:app-latest"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose up -d --no-deps --build app-api"
   rules:
     - changes:
         - backend/api/**
