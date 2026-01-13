@@ -2,6 +2,20 @@ name: mlsdo-assignment
 version: '3.8'
 
 services:
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"
+    networks:
+      - assignment
+    depends_on:
+      - app-api
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.Name}}"
   app-api:
     build: 
       context: .  
