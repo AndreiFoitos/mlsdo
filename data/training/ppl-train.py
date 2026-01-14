@@ -11,10 +11,9 @@ import mlflow
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 
-required_env = ["POSTGRES_URL", "MLFLOW_TRACKING_URL", "MLFLOW_MODEL_NAME"]
-for env in required_env:
-    if os.environ.get(env) is None:
-        raise ValueError(f'{env} environment variable not set')
+POSTGRES_URL = os.getenv('POSTGRES_URL', 'postgresql://postgres:pw1@localhost:5432/reviews_db')
+MLFLOW_TRACKING_URL = os.getenv('MLFLOW_TRACKING_URL', 'http://localhost:5000')
+MLFLOW_MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME', 'add_detection_model')
 
 # Hyperparameters (must be explicitly defined and logged)
 MODEL_NAME = "distilbert-base-uncased"

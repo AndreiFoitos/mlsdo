@@ -1,7 +1,22 @@
 stages:
   preprocess:
-    cmd: python data/preprocessing/preprocessing.py
+    cmd: python data/preprocessing/ppl-load_data.py
     deps:
-      - data/preprocessing/preprocessing.py
-    outs:
+      - data/preprocessing/ppl-load_data.py
       - data/issue_with_labels.csv
+    params:
+      - preprocessing.params
+    outs:
+      - data/processed/
+
+  train:
+    cmd: python data/training/ppl-train.py
+    deps:
+      - data/training/ppl-train.py
+      - data/processed/
+    params:
+      - training.learning_rate
+      - training.batch_size
+      - training.epochs
+    metrics:
+      - metrics/train_metrics.json

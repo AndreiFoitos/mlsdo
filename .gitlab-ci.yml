@@ -31,28 +31,13 @@ build_app:
         - backend/inference/**
         - environment.yml
 
-build_train_image:
-  stage: build
-  image: docker:20.10.16
-  services:
-    - docker:20.10.16-dind
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-  script:
-    - docker build -t "$CI_REGISTRY_IMAGE:train-latest" -f backend/inference/Dockerfile .
-    - docker push "$CI_REGISTRY_IMAGE:train-latest"
-  rules:
-    - changes:
-        - data/training/**
-        - backend/inference/**
-        - environment.yml
-
 setup_infra:
   stage: setup
   script:
     - 'which rsync || ( apk add --update rsync )'
     - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app && sudo chown $VM_USER:$VM_USER /home/$VM_USER/app"
     - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && pip3 install --user -r requirements.txt || true"
     - ssh $CI_SSH_HOST "sudo docker stop mlsdo-lab5-minio-mlflow-1 || true"
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose down && sudo docker compose up -d"
   rules:
@@ -60,28 +45,20 @@ setup_infra:
 
 update_data:
   stage: update
-  before_script:
-    - !reference [.update_app_image, before_script]
   script:
-    - ssh $CI_SSH_HOST "sudo docker stop ppl-load_data || true && sudo docker rm ppl-load_data || true"
-    - ssh $CI_SSH_HOST "sudo docker run --name ppl-load_data --network mlsdo-assignment_assignment -v /home/$VM_USER/app/data:/data -e POSTGRES_URL='$POSTGRES_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' $CI_REGISTRY_IMAGE:app-latest python /app/data/preprocessing/ppl-load_data.py"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && export POSTGRES_URL='$POSTGRES_URL' && export POSTGRES_HOST='localhost' && export POSTGRES_PORT='5432' && export POSTGRES_DB='reviews_db' && export POSTGRES_USER='postgres' && export POSTGRES_PASSWORD='$POSTGRES_PASSWORD' && export CSV_PATH='/home/$VM_USER/app/data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
   rules:
     - changes:
-        - data/preprocessing/**            
-        - backend/inference/** 
+        - data/preprocessing/**
+        - data/issue_with_labels.csv
 
 train_model:
   stage: training
-  before_script:
-    - ssh $CI_SSH_HOST "sudo docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY"
-    - ssh $CI_SSH_HOST "sudo docker pull $CI_REGISTRY_IMAGE:train-latest"
   script:
-    - ssh $CI_SSH_HOST "sudo docker stop ppl-train || true && sudo docker rm ppl-train || true"
-    - ssh $CI_SSH_HOST "sudo docker run -d --name ppl-train --network mlsdo-assignment_assignment -e POSTGRES_URL='$POSTGRES_URL' -e REDIS_URL='$REDIS_URL' -e MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' -e MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' $CI_REGISTRY_IMAGE:train-latest"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && export POSTGRES_URL='$POSTGRES_URL' && export REDIS_URL='redis://localhost:6379/0' && export MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' && export MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' && python3 data/training/ppl-train.py"
   rules:
     - changes:
         - data/training/**
-        - backend/inference/**
         - environment.yml
 
 deploy_api:
