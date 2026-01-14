@@ -38,25 +38,25 @@ services:
         tag: "{{.Name}}"
 
   celery-worker:
-    build: 
-      context: .  
-      dockerfile: ./backend/inference/Dockerfile
-    command: celery -A backend.inference.tasks worker --loglevel=info
-    environment:
-      - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
-      - REDIS_URL=redis://redis:6379/0
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    networks:
-      - assignment
-    depends_on:
-      - postgres-ml
-      - redis
-      - mlflow
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        tag: "{{.Name}}"
+      build: 
+        context: .  
+        dockerfile: ./backend/inference/Dockerfile
+      command: celery -A backend.inference.tasks:celery_app worker --loglevel=info
+      environment:
+        - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
+        - REDIS_URL=redis://redis:6379/0
+        - MLFLOW_TRACKING_URI=http://mlflow:5000
+      networks:
+        - assignment
+      depends_on:
+        - postgres-ml
+        - redis
+        - mlflow
+      restart: unless-stopped
+      logging:
+        driver: "json-file"
+        options:
+          tag: "{{.Name}}"
 
   redis:
     image: redis:7
