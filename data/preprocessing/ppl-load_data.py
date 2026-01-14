@@ -68,7 +68,7 @@ if __name__ == "__main__":
         'dbname': os.getenv('POSTGRES_DB', 'reviews_db'),
         'user': os.getenv('POSTGRES_USER', 'postgres'),
         'password': os.getenv('POSTGRES_PASSWORD', 'pw1'),
-        'host': os.getenv('POSTGRES_HOST', 'postgres-ml'),
+        'host': os.getenv('POSTGRES_HOST', 'localhost'),
         'port': int(os.getenv('POSTGRES_PORT', '5432'))
     }
     
