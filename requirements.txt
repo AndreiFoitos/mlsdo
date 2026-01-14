@@ -13,3 +13,8 @@ redis
 prometheus-fastapi-instrumentator
 pytest
 requests
+datasets
+scikit-learn
+torchmetrics
+numpy
+accelerate
