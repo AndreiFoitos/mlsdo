@@ -19,9 +19,9 @@ for env in required_env:
 # Hyperparameters (must be explicitly defined and logged)
 MODEL_NAME = "distilbert-base-uncased"
 LEARNING_RATE = 2e-5
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 EPOCHS = 4
-MAX_LENGTH = 512
+MAX_LENGTH = 256
 LIMIT = "" 
 
 accuracy_metric = torchmetrics.Accuracy(task='binary')
