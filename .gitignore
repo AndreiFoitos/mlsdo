@@ -23,7 +23,7 @@ data/*.archive
 data/raw/*.archive
 
 # Ignore the actual processed data file (tracked by DVC)
-data/issue_with_labels.csv
+# data/issue_with_labels.csv
 
 # DVC Internal
 .dvc/tmp
