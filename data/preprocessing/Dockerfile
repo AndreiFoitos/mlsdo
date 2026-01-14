@@ -6,7 +6,7 @@ RUN pip install --no-cache-dir \
     pandas \
     psycopg2-binary
 
-COPY ppl-load_data.py /app/ppl-load_data.py
+COPY preprocessing/ppl-load_data.py /app/ppl-load_data.py
 
 RUN mkdir -p /app/data
 
