@@ -28,11 +28,13 @@ def create_tables():
     create_issues_table = """
     CREATE TABLE IF NOT EXISTS issues (
         id SERIAL PRIMARY KEY,
+        task_id TEXT UNIQUE,
         summary TEXT NOT NULL,
         description TEXT NOT NULL,
         label VARCHAR(20),
         prediction VARCHAR(20),
         confidence FLOAT,
+        status TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
