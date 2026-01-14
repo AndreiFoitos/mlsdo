@@ -16,6 +16,7 @@ services:
       driver: "json-file"
       options:
         tag: "{{.Name}}"
+  
   app-api:
     build: 
       context: .  
@@ -26,6 +27,7 @@ services:
       - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
       - REDIS_URL=redis://redis:6379/0
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_MODEL_NAME=add_detection_model
     networks:
       - assignment
     depends_on:
@@ -46,6 +48,8 @@ services:
         - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
         - REDIS_URL=redis://redis:6379/0
         - MLFLOW_TRACKING_URI=http://mlflow:5000
+        - MLFLOW_MODEL_NAME=add_detection_model
+        - MLFLOW_MODEL_VERSION=1
       networks:
         - assignment
       depends_on:
@@ -110,20 +114,29 @@ services:
       - AWS_ACCESS_KEY_ID=mlflow_access_key
       - AWS_SECRET_ACCESS_KEY=mlflow_secret_key
       - POSTGRES_URL=postgresql+psycopg2://postgres:pw2@postgres-mlflow:5432/mlflow
+      - BUCKET=mlflow
     networks:
       - assignment
     depends_on:
       - postgres-mlflow
       - minio-mlflow
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   postgres-mlflow:
-    image: postgres:latest
+    image: postgres:15
     environment:
       POSTGRES_PASSWORD: pw2
       POSTGRES_DB: mlflow
     ports:
-      - "5433:5432" 
+      - "5433:5432"
+    volumes:
+      - postgres-mlflow-data:/var/lib/postgresql/data
     networks:
       - assignment
     restart: unless-stopped
@@ -134,18 +147,25 @@ services:
     environment:
       - MINIO_ROOT_USER=mlflow_access_key
       - MINIO_ROOT_PASSWORD=mlflow_secret_key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
     networks:
       - assignment
     restart: unless-stopped
 
   postgres-ml:
-    image: postgres:latest
+    image: postgres:15
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pw1
       POSTGRES_DB: reviews_db
     ports:
       - "5432:5432"
+    volumes:
+      - postgres-ml-data:/var/lib/postgresql/data
     networks:
       - assignment
     restart: unless-stopped
@@ -157,10 +177,52 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: my-secret-pw
     ports:
       - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
     networks:
       - assignment
     restart: unless-stopped
 
+  model-trainer:
+    build:
+      context: ./data/training
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
+      - MLFLOW_TRACKING_URL=http://mlflow:5000
+      - MLFLOW_MODEL_NAME=add_detection_model
+    networks:
+      - assignment
+    depends_on:
+      - mlflow
+      - postgres-ml
+    profiles:
+      - training
+
+  data-loader:
+    build:
+      context: ./data
+      dockerfile: preprocessing/Dockerfile
+    environment:
+      - POSTGRES_DB=reviews_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pw1
+      - POSTGRES_HOST=postgres-ml
+      - POSTGRES_PORT=5432
+      - CSV_PATH=/app/data/issue_with_labels.csv
+    networks:
+      - assignment
+    depends_on:
+      - postgres-ml
+    profiles:
+      - setup
+  
 networks:
   assignment:
     driver: bridge
+
+volumes:
+  postgres-mlflow-data:
+  postgres-ml-data:
+  minio-data:
+  mongo-data:
