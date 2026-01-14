@@ -18,9 +18,9 @@ MLFLOW_MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME', 'add_detection_model')
 # Hyperparameters (must be explicitly defined and logged)
 MODEL_NAME = "distilbert-base-uncased"
 LEARNING_RATE = 2e-5
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 EPOCHS = 4
-MAX_LENGTH = 256
+MAX_LENGTH = 512
 LIMIT = "" 
 
 accuracy_metric = torchmetrics.Accuracy(task='binary')
@@ -117,8 +117,8 @@ def compute_metrics(eval_pred: transformers.EvalPrediction):
         'recall': recall_metric(preds_tensor, truth_tensor).item()
     }
 
-def train_model(model, training_data, validation_data, class_weights):
-    training_args = transformers.TrainingArguments(
+    def train_model(model, training_data, validation_data, class_weights):
+        training_args = transformers.TrainingArguments(
         output_dir='./training_logs',
         num_train_epochs=EPOCHS,
         learning_rate=LEARNING_RATE, 
@@ -128,7 +128,7 @@ def train_model(model, training_data, validation_data, class_weights):
         weight_decay=0.01,
         logging_dir='./logs',
         logging_steps=10,
-        evaluation_strategy="epoch", 
+        eval_strategy="epoch", 
         save_strategy="epoch",
         load_best_model_at_end=True, 
         metric_for_best_model="f1_score",
