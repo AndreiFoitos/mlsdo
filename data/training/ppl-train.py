@@ -117,23 +117,23 @@ def compute_metrics(eval_pred: transformers.EvalPrediction):
         'recall': recall_metric(preds_tensor, truth_tensor).item()
     }
 
-    def train_model(model, training_data, validation_data, class_weights):
-        training_args = transformers.TrainingArguments(
-        output_dir='./training_logs',
-        num_train_epochs=EPOCHS,
-        learning_rate=LEARNING_RATE, 
-        per_device_train_batch_size=BATCH_SIZE,
-        per_device_eval_batch_size=BATCH_SIZE,
-        warmup_steps=100,
-        weight_decay=0.01,
-        logging_dir='./logs',
-        logging_steps=10,
-        eval_strategy="epoch", 
-        save_strategy="epoch",
-        load_best_model_at_end=True, 
-        metric_for_best_model="f1_score",
-        report_to="none"
-    )
+def train_model(model, training_data, validation_data, class_weights):
+    training_args = transformers.TrainingArguments(
+    output_dir='./training_logs',
+    num_train_epochs=EPOCHS,
+    learning_rate=LEARNING_RATE, 
+    per_device_train_batch_size=BATCH_SIZE,
+    per_device_eval_batch_size=BATCH_SIZE,
+    warmup_steps=100,
+    weight_decay=0.01,
+    logging_dir='./logs',
+    logging_steps=10,
+    eval_strategy="epoch", 
+    save_strategy="epoch",
+    load_best_model_at_end=True, 
+    metric_for_best_model="f1_score",
+    report_to="none"
+)
 
     trainer = WeightedTrainer(
         class_weights=class_weights,
