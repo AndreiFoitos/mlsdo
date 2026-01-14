@@ -47,25 +47,18 @@ CREATE TABLE IF NOT EXISTS predictions (
 """
 
 UPSERT_STARTED_SQL = """
-INSERT INTO predictions (task_id, summary, description, status)
+INSERT INTO issues (task_id, summary, description, status)
 VALUES (%s, %s, %s, %s)
 ON CONFLICT (task_id)
-DO UPDATE SET
-    summary = EXCLUDED.summary,
-    description = EXCLUDED.description,
-    status = EXCLUDED.status,
-    updated_at = CURRENT_TIMESTAMP;
+DO UPDATE SET status = EXCLUDED.status, 
 """
 
 UPDATE_SUCCESS_SQL = """
-UPDATE predictions
+UPDATE issues
 SET label = %s,
-    probability = %s,
-    existence_pred = %s,
-    executive_pred = %s,
-    property_pred = %s,
-    status = %s,
-    error = NULL,
+    prediction = %s,
+    confidence = %s,
+    status = 'SUCCESS',
     updated_at = CURRENT_TIMESTAMP
 WHERE task_id = %s;
 """
