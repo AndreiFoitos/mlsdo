@@ -1,7 +1,8 @@
 import os
 import fastapi
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
+from enum import Enum
 from celery import Celery
 from celery.result import AsyncResult
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -11,6 +12,13 @@ from datetime import datetime
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
 POSTGRES_URL = os.environ.get('POSTGRES_URL', 'postgresql://postgres:pw1@postgres-ml:5432/reviews_db')
+
+class TaskStatus(str, Enum):
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    RETRY = "RETRY"
 
 celery_app = Celery(
     "tasks",
