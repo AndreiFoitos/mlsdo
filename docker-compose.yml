@@ -41,7 +41,7 @@ services:
     build: 
       context: .  
       dockerfile: ./backend/inference/Dockerfile
-    command: celery -A tasks worker --loglevel=info
+    command: celery -A backend.inference.tasks worker --loglevel=info
     environment:
       - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
       - REDIS_URL=redis://redis:6379/0
