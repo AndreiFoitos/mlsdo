@@ -210,6 +210,8 @@ services:
       - POSTGRES_HOST=postgres-ml
       - POSTGRES_PORT=5432
       - CSV_PATH=/app/data/issue_with_labels.csv
+    volumes:
+      - ./data/issue_with_labels.csv:/app/data/issue_with_labels.csv:ro
     networks:
       - assignment
     depends_on:
