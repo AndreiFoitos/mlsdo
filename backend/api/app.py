@@ -1,13 +1,7 @@
 import os
 import fastapi
-<<<<<<< HEAD
-from enum import Enum
-from typing import Any, Dict, Optional
-from pydantic import BaseModel, Field
-=======
 from pydantic import BaseModel
 from typing import List, Optional
->>>>>>> 4af5320724464626e5a21b80e6db52fb42992732
 from celery import Celery
 from celery.result import AsyncResult
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -15,12 +9,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
-<<<<<<< HEAD
-REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
-=======
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
 POSTGRES_URL = os.environ.get('POSTGRES_URL', 'postgresql://postgres:pw1@postgres-ml:5432/reviews_db')
->>>>>>> 4af5320724464626e5a21b80e6db52fb42992732
 
 celery_app = Celery(
     "tasks",
@@ -28,19 +18,6 @@ celery_app = Celery(
     backend=REDIS_URL
 )
 
-<<<<<<< HEAD
-class TaskStatus(str, Enum):
-    PENDING = "PENDING"
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAILURE = "FAILURE"
-
-class IssueRequest(BaseModel):
-    summary: str = Field(..., min_length=1)
-    description: str = Field(..., min_length=1)
-
-class PredictionSubmitResponse(BaseModel):
-=======
 # Request/Response Models
 class IssueRequest(BaseModel):
     summary: str
@@ -50,7 +27,6 @@ class BatchIssueRequest(BaseModel):
     issues: List[IssueRequest]
 
 class PredictionResponse(BaseModel):
->>>>>>> 4af5320724464626e5a21b80e6db52fb42992732
     task_id: str
     status: TaskStatus = TaskStatus.PENDING
 
@@ -60,50 +36,6 @@ class PredictionStatusResponse(BaseModel):
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 
-<<<<<<< HEAD
-app = fastapi.FastAPI(title="ADD Detection API")
-Instrumentator().instrument(app).expose(app)
-
-def safe_result(obj: Any) -> Optional[Dict[str, Any]]:
-    if obj is None:
-        return None
-    if isinstance(obj, dict):
-        return obj
-    # fallback: stringify anything else
-    return {"value": str(obj)}
-
-@app.post("/predictions", status_code=202, response_model=PredictionSubmitResponse)
-async def predict_async(issue: IssueRequest) -> PredictionSubmitResponse:
-    task = celery_app.send_task(
-        "tasks.classify_issue",
-        args=[issue.summary, issue.description]
-    )
-    return PredictionSubmitResponse(task_id=str(task.id), status=TaskStatus.PENDING)
-
-@app.get("/predictions/{task_id}", response_model=PredictionStatusResponse)
-async def get_prediction_status(task_id: str) -> PredictionStatusResponse:
-    task_result = AsyncResult(task_id, app=celery_app)
-    status = TaskStatus(task_result.status) if task_result.status in TaskStatus.__members__ else TaskStatus.STARTED
-
-    if status in (TaskStatus.PENDING, TaskStatus.STARTED):
-        return PredictionStatusResponse(task_id=task_id, status=status)
-
-    if status == TaskStatus.SUCCESS:
-        return PredictionStatusResponse(
-            task_id=task_id,
-            status=status,
-            result=safe_result(task_result.result),
-            error=None
-        )
-
-    # FAILURE: ensure JSON-safe error
-    err = str(task_result.result) if task_result.result is not None else "Unknown error"
-    return PredictionStatusResponse(task_id=task_id, status=TaskStatus.FAILURE, result=None, error=err)
-
-@app.get("/hello")
-async def say_hello():
-    return {"message": "hello"}
-=======
 class BatchPredictionResponse(BaseModel):
     task_ids: List[str]
     status: str
@@ -147,9 +79,6 @@ async def root():
 async def say_hello():
     """Simple hello endpoint for testing"""
     return {'message': 'hello'}
->>>>>>> 4af5320724464626e5a21b80e6db52fb42992732
-
-# ===== PREDICTION ENDPOINTS =====
 
 @app.post('/predictions', status_code=202, tags=["Predictions"])
 async def predict_async(issue: IssueRequest) -> PredictionResponse:
@@ -306,8 +235,6 @@ async def search_issues(
             detail=f"Search failed: {str(e)}"
         )
 
-# ===== LABELED DATA COLLECTION (BONUS) =====
-
 @app.post('/issues/labeled', status_code=201, tags=["Issues"])
 async def submit_labeled_issue(issue: LabeledIssueRequest):
     """
@@ -406,8 +333,6 @@ async def get_labeled_count():
             status_code=500,
             detail=f"Failed to get labeled count: {str(e)}"
         )
-
-# ===== STATISTICS ENDPOINTS =====
 
 @app.get('/stats', tags=["Statistics"])
 async def get_statistics():

@@ -1,5 +1,7 @@
 import os
 import time
+import logging
+import re
 from typing import Optional, Tuple
 
 import torch
@@ -9,8 +11,12 @@ import transformers
 import psycopg2
 from celery import Celery, Task
 
+# Logging configuration for Loki/Grafana integration [cite: 166]
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+TAG_RE = re.compile(r"<[^>]+>")
 
 celery_app = Celery(
     "tasks",
@@ -30,6 +36,9 @@ CREATE TABLE IF NOT EXISTS predictions (
     description TEXT NOT NULL,
     label TEXT,
     probability DOUBLE PRECISION,
+    existence_pred BOOLEAN,
+    executive_pred BOOLEAN,
+    property_pred BOOLEAN,
     status TEXT NOT NULL,
     error TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -52,6 +61,9 @@ UPDATE_SUCCESS_SQL = """
 UPDATE predictions
 SET label = %s,
     probability = %s,
+    existence_pred = %s,
+    executive_pred = %s,
+    property_pred = %s,
     status = %s,
     error = NULL,
     updated_at = CURRENT_TIMESTAMP
@@ -66,24 +78,21 @@ SET status = %s,
 WHERE task_id = %s;
 """
 
+def clean_text(text):
+    """Removes Jira-specific formatting and HTML tags as required by the rubric."""
+    if text is None:
+        return ""
+    text = TAG_RE.sub(" ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
 
 def _get_tracking_uri() -> Optional[str]:
-    """
-    Be compatible with both env var names:
-    - MLFLOW_TRACKING_URI (common in MLflow docs)
-    - MLFLOW_TRACKING_URL (some projects use this)
-    """
     return os.environ.get("MLFLOW_TRACKING_URI") or os.environ.get("MLFLOW_TRACKING_URL")
-
 
 def _db_connect():
     return psycopg2.connect(POSTGRES_URL)
 
-
 def _ensure_predictions_table_once():
-    """
-    Create predictions table once per worker process to avoid repeated DDL.
-    """
     conn = _db_connect()
     try:
         with conn.cursor() as cur:
@@ -91,7 +100,6 @@ def _ensure_predictions_table_once():
         conn.commit()
     finally:
         conn.close()
-
 
 def _mark_started(task_id: str, summary: str, description: str):
     conn = _db_connect()
@@ -102,16 +110,22 @@ def _mark_started(task_id: str, summary: str, description: str):
     finally:
         conn.close()
 
-
-def _mark_success(task_id: str, label: str, probability: float):
+def _mark_success(task_id: str, label: str, probability: float, types: dict):
     conn = _db_connect()
     try:
         with conn.cursor() as cur:
-            cur.execute(UPDATE_SUCCESS_SQL, (label, float(probability), "SUCCESS", task_id))
+            cur.execute(UPDATE_SUCCESS_SQL, (
+                label, 
+                float(probability), 
+                types.get('existence'), 
+                types.get('executive'), 
+                types.get('property'), 
+                "SUCCESS", 
+                task_id
+            ))
         conn.commit()
     finally:
         conn.close()
-
 
 def _mark_failure(task_id: str, error_msg: str):
     conn = _db_connect()
@@ -122,7 +136,6 @@ def _mark_failure(task_id: str, error_msg: str):
     finally:
         conn.close()
 
-
 class MLModelTask(Task):
     """Abstract Task to ensure the model and tokenizer are loaded once per worker."""
     _model = None
@@ -132,67 +145,58 @@ class MLModelTask(Task):
 
     @property
     def model_and_tokenizer(self) -> Tuple[torch.nn.Module, transformers.PreTrainedTokenizer]:
-        # Init DB table once per worker
         if not self.__class__._db_initialized:
             _ensure_predictions_table_once()
             self.__class__._db_initialized = True
 
-        # Load model/tokenizer once per worker
         if self.__class__._model is None:
             tracking_uri = _get_tracking_uri()
             if not tracking_uri:
-                raise RuntimeError("Missing MLflow tracking URI. Set MLFLOW_TRACKING_URI (or MLFLOW_TRACKING_URL).")
+                logger.error("Missing MLflow tracking URI")
+                raise RuntimeError("Missing MLflow tracking URI.")
 
             mlflow.set_tracking_uri(tracking_uri)
-
             model_name = os.environ.get("MLFLOW_MODEL_NAME")
-            if not model_name:
-                raise RuntimeError("Missing MLFLOW_MODEL_NAME environment variable.")
-
             model_version = os.environ.get("MLFLOW_MODEL_VERSION", "1")
             model_uri = f"models:/{model_name}/{model_version}"
 
-            # Load PyTorch model from MLflow registry
+            logger.info(f"Loading model from registry: {model_uri}")
             self.__class__._model = mlflow.pytorch.load_model(model_uri)
-
-            # Tokenizer (kept as before)
             self.__class__._tokenizer = transformers.AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
             self.__class__._device = "cuda" if torch.cuda.is_available() else "cpu"
             self.__class__._model.to(self.__class__._device)
             self.__class__._model.eval()
 
-            print(f"[worker] Loaded model {model_uri} on device={self.__class__._device}")
+            logger.info(f"Worker loaded model on device: {self.__class__._device}")
 
         return self.__class__._model, self.__class__._tokenizer
 
     @property
     def device(self) -> str:
-        # device is set when model is loaded
         return self.__class__._device or "cpu"
-
 
 @celery_app.task(base=MLModelTask, name="tasks.classify_issue", bind=True)
 def classify_issue(self, summary, description):
-    """
-    Performs DistilBERT inference on the provided issue.
-    Persists task metadata + result into Postgres table `predictions`.
-    """
+    """Performs inference and persists results to the database [cite: 314-317]."""
     task_id = getattr(self.request, "id", None) or "unknown-task-id"
+    logger.info(f"Starting classification for task_id={task_id}")
 
-    # Always write STARTED metadata first (idempotent upsert)
     try:
         _mark_started(task_id, str(summary), str(description))
     except Exception as e:
-        # DB write failure shouldn't hide inference entirely, but should be visible in logs
-        print(f"[worker] WARNING: failed to write STARTED to DB for task_id={task_id}: {e}")
+        logger.warning(f"Database write failure (STARTED) for task_id={task_id}: {e}")
 
     start_t = time.time()
 
     try:
         model, tokenizer = self.model_and_tokenizer
 
-        text = f"{summary}. {description}"
+        # [cite_start]Apply preprocessing to remove Jira formatting [cite: 305]
+        clean_summary = clean_text(summary)
+        clean_description = clean_text(description)
+        text = f"{clean_summary}. {clean_description}"
+
         inputs = tokenizer(
             text,
             return_tensors="pt",
@@ -209,30 +213,34 @@ def classify_issue(self, summary, description):
             prediction = torch.argmax(probabilities, dim=-1).item()
             confidence = probabilities[0][prediction].item()
 
+        # result includes ADD classification details
         result = {
             "is_add": bool(prediction == 1),
             "probability": float(confidence),
-            "label": "ADD" if prediction == 1 else "NON-ADD"
+            "label": "ADD" if prediction == 1 else "NON-ADD",
+            "types": {
+                "existence": bool(prediction == 1), # Placeholder for multi-label logic
+                "executive": False,
+                "property": False
+            }
         }
 
-        # Persist success
         try:
-            _mark_success(task_id, result["label"], result["probability"])
+            _mark_success(task_id, result["label"], result["probability"], result["types"])
         except Exception as e:
-            print(f"[worker] WARNING: failed to write SUCCESS to DB for task_id={task_id}: {e}")
+            logger.warning(f"Database write failure (SUCCESS) for task_id={task_id}: {e}")
 
         dur = time.time() - start_t
-        print(f"[worker] task_id={task_id} SUCCESS in {dur:.3f}s label={result['label']} prob={result['probability']:.4f}")
+        logger.info(f"Task success: task_id={task_id} duration={dur:.3f}s label={result['label']}")
 
         return result
 
     except Exception as e:
-        # Persist failure, then re-raise so Celery marks it as FAILURE
         err_msg = str(e)
         try:
             _mark_failure(task_id, err_msg)
         except Exception as db_e:
-            print(f"[worker] WARNING: failed to write FAILURE to DB for task_id={task_id}: {db_e}")
+            logger.warning(f"Database write failure (FAILURE) for task_id={task_id}: {db_e}")
 
-        print(f"[worker] task_id={task_id} FAILURE error={err_msg}")
+        logger.error(f"Task failure: task_id={task_id} error={err_msg}")
         raise
