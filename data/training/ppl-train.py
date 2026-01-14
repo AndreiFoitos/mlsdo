@@ -1,7 +1,8 @@
 import os
-import typing
+import time
 import datasets
 import psycopg2
+import typing
 import torch
 import torch.nn as nn 
 import torchmetrics
@@ -51,10 +52,10 @@ class Issue:
         self.description = description or ""
         self.is_add = is_add
 
-def load_data_from_db(connection_string: str | None = None) -> list[Issue]:
+def load_data_from_db(connection_string: typing.Optional[str] = None) -> typing.List[Issue]:
     return list(_load_data_from_db_helper(connection_string))
 
-def _load_data_from_db_helper(connection_string: str | None = None) -> typing.Iterator[Issue]:
+def _load_data_from_db_helper(connection_string: typing.Optional[str] = None) -> typing.Iterator[Issue]:
     if connection_string is None:
         connection_string = os.environ.get('POSTGRES_URL')
     
@@ -128,11 +129,11 @@ def train_model(model, training_data, validation_data, class_weights):
         weight_decay=0.01,
         logging_dir='./logs',
         logging_steps=10,
-        eval_strategy="epoch", 
+        evaluation_strategy="epoch", 
         save_strategy="epoch",
         load_best_model_at_end=True, 
         metric_for_best_model="f1_score",
-        use_cpu=False 
+        report_to="none"
     )
 
     trainer = WeightedTrainer(
@@ -160,7 +161,7 @@ def split_dataset(dataset, test_size=0.15, val_size=0.15):
 def main():
     mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URL'))
     
-    with mlflow.start_run():
+    with mlflow.start_run(run_name=f"training_{int(time.time())}"):
         mlflow.autolog(log_models=False)
         mlflow.log_params({
             "learning_rate": LEARNING_RATE,
