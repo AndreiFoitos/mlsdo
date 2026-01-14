@@ -27,7 +27,6 @@ def load_csv_to_postgres(csv_file_path, db_config):
     """)
     conn.commit()
 
-    # 3. Bulk Insert
     print(f"Inserting {len(df)} records...")
     data_tuples = [
         (row.label_id, row.summary, row.description, 
@@ -55,8 +54,9 @@ if __name__ == "__main__":
         'dbname': os.getenv('POSTGRES_DB', 'reviews_db'),
         'user': os.getenv('POSTGRES_USER', 'postgres'),
         'password': os.getenv('POSTGRES_PASSWORD', 'pw1'),
-        'host': 'localhost',
-        'port': 5432
+        'host': os.getenv('POSTGRES_HOST', 'postgres-ml'),
+        'port': int(os.getenv('POSTGRES_PORT', '5432'))
     }
-    load_csv_to_postgres("data/issue_with_labels.csv", DB_CONFIG)
-# trigger update_data
+    
+    csv_path = os.getenv('CSV_PATH', 'data/issue_with_labels.csv')
+    load_csv_to_postgres(csv_path, DB_CONFIG)
