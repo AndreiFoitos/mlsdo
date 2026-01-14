@@ -53,9 +53,30 @@ setup_infra:
     - 'which rsync || ( apk add --update rsync )'
     - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app && sudo chown $VM_USER:$VM_USER /home/$VM_USER/app"
     - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
+    - ssh $CI_SSH_HOST "sudo docker stop mlsdo-lab5-minio-mlflow-1 || true"
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose down && sudo docker compose up -d"
   rules:
     - when: always
+
+  data-loader:
+    build:
+      context: ./data/preprocessing
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_DB=reviews_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pw1
+      - POSTGRES_HOST=postgres-ml
+      - POSTGRES_PORT=5432
+      - CSV_PATH=/app/data/issue_with_labels.csv
+    volumes:
+      - ./data/issue_with_labels.csv:/app/data/issue_with_labels.csv:ro
+    networks:
+      - assignment
+    depends_on:
+      - postgres-ml
+    profiles:
+      - setup
 
 update_data:
   stage: update
