@@ -18,3 +18,5 @@ scikit-learn
 torchmetrics
 numpy
 accelerate
+boto3
+torchvision
