@@ -50,6 +50,9 @@ services:
         - MLFLOW_TRACKING_URI=http://mlflow:5000
         - MLFLOW_MODEL_NAME=add_detection_model
         - MLFLOW_MODEL_VERSION=1
+        - MLFLOW_S3_ENDPOINT_URL=http://minio-mlflow:9000
+        - AWS_ACCESS_KEY_ID=mlflow_access_key
+        - AWS_SECRET_ACCESS_KEY=mlflow_secret_key
       networks:
         - assignment
       depends_on:
