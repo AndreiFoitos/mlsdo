@@ -72,5 +72,5 @@ if __name__ == "__main__":
         'port': int(os.getenv('POSTGRES_PORT', '5432'))
     }
     
-    csv_path = os.getenv('CSV_PATH', 'data/issue_with_labels.csv')
+    csv_path = os.getenv('CSV_PATH', 'issue_with_labels.csv')
     load_csv_to_postgres(csv_path, DB_CONFIG)
