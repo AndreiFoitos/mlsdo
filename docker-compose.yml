@@ -95,7 +95,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning:/etc/grafana/provisioning
     ports:
       - "0.0.0.0:3000:3000"
     environment:
@@ -103,8 +103,9 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev/grafana
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      - GF_AUTH_DISABLE_LOGIN_FORM=false
-      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SERVER_PROTOCOL=http
+      - GF_SERVER_DOMAIN=mlops.digital-lab.dev
+      - GF_SERVER_ENFORCE_DOMAIN=false
     networks:
       - assignment
     depends_on:
