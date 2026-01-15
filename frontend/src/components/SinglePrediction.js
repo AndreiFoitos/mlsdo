@@ -168,41 +168,23 @@ function SinglePrediction() {
           <h3>Prediction Result</h3>
           <div className="result-content">
             <div className="result-main">
-              <p><strong>Classification:</strong> <span className={`classification ${result.prediction?.toLowerCase()}`}>{result.prediction || 'Unknown'}</span></p>
-              <p><strong>Confidence:</strong> <span className="confidence">{result.confidence ? (result.confidence * 100).toFixed(2) + '%' : 'N/A'}</span></p>
+              <p><strong>Classification:</strong> <span className={`classification ${result.label?.toLowerCase()}`}>{result.label || 'Unknown'}</span></p>
+              <p><strong>Confidence:</strong> <span className="confidence">{result.probability ? (result.probability * 100).toFixed(2) + '%' : 'N/A'}</span></p>
             </div>
             
-            {result.probabilities && (
-              <div className="probabilities">
-                <h4>Detailed Probabilities:</h4>
-                <div className="prob-bars">
-                  <div className="prob-item">
-                    <span>ADD:</span>
-                    <div className="prob-bar">
-                      <div 
-                        className="prob-fill add" 
-                        style={{width: `${(result.probabilities.ADD * 100).toFixed(1)}%`}}
-                      ></div>
-                    </div>
-                    <span>{(result.probabilities.ADD * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="prob-item">
-                    <span>non-ADD:</span>
-                    <div className="prob-bar">
-                      <div 
-                        className="prob-fill non-add" 
-                        style={{width: `${(result.probabilities['non-ADD'] * 100).toFixed(1)}%`}}
-                      ></div>
-                    </div>
-                    <span>{(result.probabilities['non-ADD'] * 100).toFixed(1)}%</span>
-                  </div>
-                </div>
+            {result.types && (
+              <div className="additional-info">
+                <h4>Decision Types:</h4>
+                <ul>
+                  <li><strong>Existence Decision:</strong> {result.types.existence ? 'Yes' : 'No'}</li>
+                  <li><strong>Executive Decision:</strong> {result.types.executive ? 'Yes' : 'No'}</li>
+                  <li><strong>Property Decision:</strong> {result.types.property ? 'Yes' : 'No'}</li>
+                </ul>
               </div>
             )}
           </div>
         </div>
       )}
-
       <div className="info-box" style={{marginTop: '2rem'}}>
         <h4>How it works</h4>
         <ol>

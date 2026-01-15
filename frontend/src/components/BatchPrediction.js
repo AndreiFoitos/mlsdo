@@ -278,13 +278,22 @@ function BatchPrediction() {
                 
                 {data.result && (
                   <div className="result-details">
-                    <p><strong>Prediction:</strong> <span className={`prediction-label ${data.result.prediction?.toLowerCase()}`}>{data.result.prediction}</span></p>
-                    <p><strong>Confidence:</strong> {(data.result.confidence * 100).toFixed(1)}%</p>
+                    <p><strong>Prediction:</strong> <span className={`prediction-label ${data.result.label?.toLowerCase()}`}>{data.result.label}</span></p>
+                    <p><strong>Confidence:</strong> {(data.result.probability * 100).toFixed(1)}%</p>
+                    {data.result.types && (
+                      <div className="decision-types">
+                        <small>
+                          Types: {data.result.types.existence ? 'Existence ' : ''}
+                          {data.result.types.executive ? 'Executive ' : ''}
+                          {data.result.types.property ? 'Property' : ''}
+                        </small>
+                      </div>
+                    )}
                   </div>
                 )}
                 
                 {data.error && (
-                  <p className="error-text">❌ {data.error}</p>
+                  <p className="error-text">{data.error}</p>
                 )}
               </div>
             ))}
