@@ -53,6 +53,8 @@ class LabeledIssueRequest(BaseModel):
     description: str
     label: str  # 'ADD' or 'non-ADD'
 
+api_router = fastapi.APIRouter(prefix="/api")
+
 app = fastapi.FastAPI(
     title="ADD Detection API",
     description="API for Architectural Design Decision Detection in Jira issues",
@@ -88,7 +90,7 @@ async def say_hello():
     """Simple hello endpoint for testing"""
     return {'message': 'hello'}
 
-@app.post('/predictions', status_code=202, tags=["Predictions"])
+@api_router.post('/predictions', status_code=202, tags=["Predictions"])
 async def predict_async(issue: IssueRequest) -> PredictionResponse:
     """
     Submit a single prediction task to the Celery worker.
@@ -111,7 +113,7 @@ async def predict_async(issue: IssueRequest) -> PredictionResponse:
             detail=f"Failed to submit prediction: {str(e)}"
         )
 
-@app.post('/predictions/batch', status_code=202, tags=["Predictions"])
+@api_router.post('/predictions/batch', status_code=202, tags=["Predictions"])
 async def predict_batch_async(batch: BatchIssueRequest) -> BatchPredictionResponse:
     """
     Submit multiple prediction tasks to the Celery worker.
@@ -137,7 +139,7 @@ async def predict_batch_async(batch: BatchIssueRequest) -> BatchPredictionRespon
             detail=f"Failed to submit batch prediction: {str(e)}"
         )
 
-@app.get('/predictions/{task_id}', tags=["Predictions"])
+@api_router.get('/predictions/{task_id}', tags=["Predictions"])
 async def get_prediction_status(task_id: str):
     """
     Check the status or retrieve the result of an asynchronous prediction task.
@@ -173,9 +175,7 @@ async def get_prediction_status(task_id: str):
             detail=f"Failed to fetch task status: {str(e)}"
         )
 
-# ===== ISSUE SEARCH ENDPOINTS =====
-
-@app.get('/issues/search', tags=["Issues"])
+@api_router.get('/issues/search', tags=["Issues"])
 async def search_issues(
     keyword: str,
     limit: Optional[int] = 50,
@@ -243,7 +243,7 @@ async def search_issues(
             detail=f"Search failed: {str(e)}"
         )
 
-@app.post('/issues/labeled', status_code=201, tags=["Issues"])
+@api_router.post('/issues/labeled', status_code=201, tags=["Issues"])
 async def submit_labeled_issue(issue: LabeledIssueRequest):
     """
     BONUS FEATURE: Collect new labeled data from users.
@@ -301,7 +301,7 @@ async def submit_labeled_issue(issue: LabeledIssueRequest):
             detail=f"Failed to submit labeled issue: {str(e)}"
         )
 
-@app.get('/issues/labeled/count', tags=["Issues"])
+@api_router.get('/issues/labeled/count', tags=["Issues"])
 async def get_labeled_count():
     """
     Get count of labeled issues collected for model improvement.
@@ -342,7 +342,7 @@ async def get_labeled_count():
             detail=f"Failed to get labeled count: {str(e)}"
         )
 
-@app.get('/stats', tags=["Statistics"])
+@api_router.get('/stats', tags=["Statistics"])
 async def get_statistics():
     """
     Get system statistics including total issues and predictions made.
@@ -376,5 +376,4 @@ async def get_statistics():
             "note": "Database tables may not be initialized yet"
         }
 
-# trigger build_app
-# trigger deploy_api
+app.include_router(api_router)
