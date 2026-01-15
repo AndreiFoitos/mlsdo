@@ -36,7 +36,6 @@ function SinglePrediction() {
       setStatus('PENDING');
       setPolling(true);
 
-      // Start polling for results
       pollForResult(newTaskId);
     } catch (err) {
       console.error('Submission error:', err);
@@ -51,43 +50,41 @@ function SinglePrediction() {
     let attempts = 0;
 
     const poll = setInterval(async () => {
+      attempts++;
+
       try {
-        console.log(`Polling attempt ${attempts + 1} for task ${id}`);
-        
         const response = await axios.get(`${API_BASE_URL}/predictions/${id}`);
-        const currentStatus = response.data.status;
-        
-        console.log('Current status:', currentStatus, response.data);
-        setStatus(currentStatus);
+        const data = response.data;
 
-        if (currentStatus === 'SUCCESS') {
-          setResult(response.data.result);
+        console.log('Poll attempt', attempts, 'Status:', data.status);
+        setStatus(data.status);
+
+        if (data.status === 'SUCCESS') {
+          clearInterval(poll);
+          setResult(data.result);
           setLoading(false);
           setPolling(false);
+          console.log('Task completed successfully:', data.result);
+        } else if (data.status === 'FAILURE') {
           clearInterval(poll);
-          console.log('Prediction complete:', response.data.result);
-        } else if (currentStatus === 'FAILURE') {
-          setError(response.data.error || 'Prediction failed');
+          setError(data.error || 'Prediction failed');
           setLoading(false);
           setPolling(false);
+          console.error('Task failed:', data.error);
+        } else if (attempts >= maxAttempts) {
           clearInterval(poll);
-          console.error('Prediction failed:', response.data.error);
-        }
-
-        attempts++;
-        if (attempts >= maxAttempts) {
           setError('Prediction timed out after 60 seconds');
           setLoading(false);
           setPolling(false);
-          clearInterval(poll);
-          console.error('Polling timed out');
         }
       } catch (err) {
         console.error('Polling error:', err);
-        setError(err.response?.data?.detail || 'Failed to fetch prediction status');
-        setLoading(false);
-        setPolling(false);
-        clearInterval(poll);
+        if (attempts >= maxAttempts) {
+          clearInterval(poll);
+          setError('Failed to fetch prediction status');
+          setLoading(false);
+          setPolling(false);
+        }
       }
     }, 1000);
   };
@@ -116,7 +113,7 @@ function SinglePrediction() {
             type="text"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="e.g., Refactor authentication module"
+            placeholder="e.g., Choose database technology for user authentication"
             required
             disabled={loading}
             minLength={3}
@@ -130,7 +127,7 @@ function SinglePrediction() {
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., We need to refactor the authentication system to use OAuth2 instead of basic authentication for better security..."
+            placeholder="e.g., We need to decide between PostgreSQL and MongoDB for storing user credentials and session data. PostgreSQL offers ACID compliance..."
             rows="8"
             required
             disabled={loading}
@@ -159,7 +156,7 @@ function SinglePrediction() {
 
       {error && (
         <div className="error-message">
-          <strong>❌ Error:</strong> {error}
+          <strong>Error:</strong> {error}
           <p style={{marginTop: '0.5rem', fontSize: '0.9rem'}}>
             Please try again or contact support if the issue persists.
           </p>
@@ -168,7 +165,7 @@ function SinglePrediction() {
 
       {result && !error && (
         <div className="result-container success">
-          <h3>✅ Prediction Result</h3>
+          <h3>Prediction Result</h3>
           <div className="result-content">
             <div className="result-main">
               <p><strong>Classification:</strong> <span className={`classification ${result.prediction?.toLowerCase()}`}>{result.prediction || 'Unknown'}</span></p>
