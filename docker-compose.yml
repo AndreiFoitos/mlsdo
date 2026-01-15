@@ -106,6 +106,7 @@ services:
       - GF_SERVER_PROTOCOL=http
       - GF_SERVER_DOMAIN=mlops.digital-lab.dev
       - GF_SERVER_ENFORCE_DOMAIN=false
+      - GF_SECURITY_DISABLE_CSRF=true
     networks:
       - assignment
     depends_on:
