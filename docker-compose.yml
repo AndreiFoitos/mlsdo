@@ -192,7 +192,7 @@ services:
     environment:
       - ADMINER_DEFAULT_SERVER=postgres-ml
     networks:
-      - your-network-name
+      - assignment
     depends_on:
       - postgres-ml
       - postgres-mlflow
@@ -209,7 +209,7 @@ services:
       - ME_CONFIG_BASICAUTH_USERNAME=admin
       - ME_CONFIG_BASICAUTH_PASSWORD=pass
     networks:
-      - your-network-name
+      - assignment
     depends_on:
       - mongo
 
