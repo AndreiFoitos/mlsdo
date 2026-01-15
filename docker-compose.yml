@@ -197,7 +197,7 @@ services:
       - postgres-ml
       - postgres-mlflow
 
-    mongo-express:
+  mongo-express:
     image: mongo-express:latest
     container_name: mlsdo-assignment-mongo-express-1
     restart: unless-stopped
