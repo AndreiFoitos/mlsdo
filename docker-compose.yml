@@ -197,7 +197,7 @@ services:
       - postgres-ml
       - postgres-mlflow
 
-  mongo-express:
+    mongo-express:
     image: mongo-express:latest
     container_name: mlsdo-assignment-mongo-express-1
     restart: unless-stopped
@@ -206,6 +206,8 @@ services:
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=my-secret-pw
       - ME_CONFIG_BASICAUTH_USERNAME=admin
       - ME_CONFIG_BASICAUTH_PASSWORD=pass
     networks:
