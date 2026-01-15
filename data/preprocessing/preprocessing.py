@@ -20,7 +20,6 @@ jira_db = client["JiraRepos"]
 
 labels = labels_db["IssueLabels"]
 
-# Make sure it has the fields
 cursor = labels.find(
     {
         "tags": "has-label",
@@ -34,7 +33,7 @@ cursor = labels.find(
 records = []
 
 for label in cursor:
-    label_id = label["_id"] # "Apache-13343357"
+    label_id = label["_id"]
     if "-" not in label_id:
         continue
 
@@ -60,9 +59,8 @@ for label in cursor:
         "executive": bool(label.get("executive", False)),
     })
 
-# Convert to DataFrame
 df = pd.DataFrame(records)
-# Output path
+
 os.makedirs("data", exist_ok = True)
 output_path = "data/issue_with_labels.csv"
 df.to_csv(output_path, index=False, encoding="utf-8")

@@ -1,10 +1,3 @@
-"""
-Test script for ADD Detection API endpoints.
-
-Usage:
-    python test_api.py
-"""
-
 import requests
 import time
 import json
@@ -21,13 +14,11 @@ def test_health_check():
     """Test health check endpoints"""
     print_section("Testing Health Check Endpoints")
     
-    # Test root endpoint
     print("\n1. Testing GET /")
     response = requests.get(f"{API_BASE_URL}/")
     print(f"   Status: {response.status_code}")
     print(f"   Response: {response.json()}")
     
-    # Test hello endpoint
     print("\n2. Testing GET /hello")
     response = requests.get(f"{API_BASE_URL}/hello")
     print(f"   Status: {response.status_code}")
@@ -37,7 +28,6 @@ def test_single_prediction():
     """Test single prediction endpoint"""
     print_section("Testing Single Prediction")
     
-    # Submit prediction
     print("\n1. Submitting single prediction...")
     payload = {
         "summary": "Refactor database layer to use async connections",
@@ -49,8 +39,7 @@ def test_single_prediction():
     result = response.json()
     print(f"   Task ID: {result['task_id']}")
     print(f"   Status: {result['status']}")
-    
-    # Poll for result
+
     task_id = result['task_id']
     print(f"\n2. Polling for result (task_id: {task_id})...")
     
@@ -63,13 +52,13 @@ def test_single_prediction():
         print(f"   Attempt {i+1}: Status = {status_result['status']}")
         
         if status_result['status'] == 'SUCCESS':
-            print(f"   ✅ Prediction: {status_result.get('result', {})}")
+            print(f"Prediction: {status_result.get('result', {})}")
             break
         elif status_result['status'] == 'FAILURE':
-            print(f"   ❌ Failed: {status_result.get('error', 'Unknown error')}")
+            print(f"Failed: {status_result.get('error', 'Unknown error')}")
             break
     else:
-        print(f"   ⚠️  Timeout after {max_attempts} seconds")
+        print(f"Timeout after {max_attempts} seconds")
 
 def test_batch_prediction():
     """Test batch prediction endpoint"""
@@ -99,7 +88,6 @@ def test_batch_prediction():
     print(f"   Task IDs: {result['task_ids']}")
     print(f"   Number of tasks: {len(result['task_ids'])}")
     
-    # Poll for results
     print(f"\n2. Polling for batch results...")
     task_ids = result['task_ids']
     
@@ -113,17 +101,17 @@ def test_batch_prediction():
             status_result = response.json()
             
             if status_result['status'] == 'SUCCESS':
-                if attempt == 0:  # Only print on first check
+                if attempt == 0:
                     print(f"   Task {i+1}: {status_result.get('result', {})}")
                 completed += 1
             elif status_result['status'] in ['PENDING', 'STARTED']:
                 all_complete = False
         
         if all_complete:
-            print(f"   ✅ All {len(task_ids)} predictions complete!")
+            print(f"All {len(task_ids)} predictions complete!")
             break
     else:
-        print(f"   ⚠️  Some predictions did not complete in time")
+        print(f"Some predictions did not complete in time")
 
 def test_search():
     """Test search endpoint"""
@@ -162,13 +150,12 @@ def test_labeled_submission():
     
     if response.status_code == 201:
         result = response.json()
-        print(f"   ✅ {result['message']}")
+        print(f" {result['message']}")
         print(f"   Issue ID: {result['id']}")
         print(f"   Label: {result['label']}")
     else:
         print(f"   Error: {response.json()}")
-    
-    # Get labeled count
+
     print("\n2. Getting labeled data count...")
     response = requests.get(f"{API_BASE_URL}/issues/labeled/count")
     
@@ -193,11 +180,10 @@ def test_statistics():
 
 def main():
     """Run all tests"""
-    print("\n🚀 Starting API Tests")
+    print("\nStarting API Tests")
     print(f"   Target: {API_BASE_URL}")
     
     try:
-        # Test all endpoints
         test_health_check()
         test_single_prediction()
         test_batch_prediction()
@@ -205,13 +191,13 @@ def main():
         test_labeled_submission()
         test_statistics()
         
-        print_section("✅ All Tests Complete!")
+        print_section("All Tests Complete!")
         
     except requests.exceptions.ConnectionError:
-        print("\n❌ ERROR: Could not connect to API")
+        print("\nERROR: Could not connect to API")
         print(f"   Make sure the API is running at {API_BASE_URL}")
     except Exception as e:
-        print(f"\n❌ ERROR: {e}")
+        print(f"\nERROR: {e}")
 
 if __name__ == "__main__":
     main()

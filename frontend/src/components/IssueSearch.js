@@ -115,7 +115,7 @@ function IssueSearch() {
             className="search-input"
           />
           <button type="submit" disabled={loading || !keyword.trim()} className="btn-primary">
-            {loading ? '🔍 Searching...' : '🔍 Search'}
+            {loading ? 'Searching...' : 'Search'}
           </button>
           <button type="button" onClick={handleReset} className="btn-secondary">
             Reset
@@ -125,7 +125,7 @@ function IssueSearch() {
 
       {error && (
         <div className="error-message">
-          <strong>❌ Error:</strong> {error}
+          <strong>Error:</strong> {error}
         </div>
       )}
 
@@ -165,11 +165,11 @@ function IssueSearch() {
                 </p>
                 
                 <div className="result-meta">
-                  {issue.id && <span>🆔 ID: {issue.id}</span>}
-                  {issue.created_at && <span>📅 {formatDate(issue.created_at)}</span>}
+                  {issue.id && <span>ID: {issue.id}</span>}
+                  {issue.created_at && <span>{formatDate(issue.created_at)}</span>}
                   {issue.prediction && (
                     <span className="prediction-badge">
-                      🤖 Predicted: {issue.prediction}
+                      Predicted: {issue.prediction}
                       {issue.confidence && ` (${(issue.confidence * 100).toFixed(0)}%)`}
                     </span>
                   )}
@@ -206,7 +206,7 @@ function IssueSearch() {
 
       {searched && results.length === 0 && !loading && !error && (
         <div className="no-results">
-          <div className="no-results-icon">🔍</div>
+          <div className="no-results-icon"></div>
           <h3>No issues found</h3>
           <p>No issues found matching "<strong>{keyword}</strong>"</p>
           <p>Try different keywords or check your spelling.</p>
@@ -214,14 +214,14 @@ function IssueSearch() {
       )}
 
       <div className="info-box" style={{marginTop: '2rem'}}>
-        <h4>💡 Search Tips</h4>
+        <h4>Search Tips</h4>
         <ul>
           <li>Search looks through both summary and description fields</li>
           <li>Search is case-insensitive (e.g., "API" matches "api")</li>
           <li>Use specific keywords for better results</li>
           <li>Partial word matches are supported</li>
         </ul>
-        <h4 style={{marginTop: '1rem'}}>🔍 Example searches:</h4>
+        <h4 style={{marginTop: '1rem'}}>Example searches:</h4>
         <div className="search-examples">
           <button onClick={() => { setKeyword('authentication'); handleSearch(); }} className="example-btn">authentication</button>
           <button onClick={() => { setKeyword('refactor'); handleSearch(); }} className="example-btn">refactor</button>

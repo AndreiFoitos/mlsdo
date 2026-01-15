@@ -11,7 +11,6 @@ import transformers
 import psycopg2
 from celery import Celery, Task
 
-# Logging configuration for Loki/Grafana integration [cite: 166]
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -184,8 +183,6 @@ def classify_issue(self, summary, description):
 
     try:
         model, tokenizer = self.model_and_tokenizer
-
-        # [cite_start]Apply preprocessing to remove Jira formatting [cite: 305]
         clean_summary = clean_text(summary)
         clean_description = clean_text(description)
         text = f"{clean_summary}. {clean_description}"
@@ -206,13 +203,12 @@ def classify_issue(self, summary, description):
             prediction = torch.argmax(probabilities, dim=-1).item()
             confidence = probabilities[0][prediction].item()
 
-        # result includes ADD classification details
         result = {
             "is_add": bool(prediction == 1),
             "probability": float(confidence),
             "label": "ADD" if prediction == 1 else "NON-ADD",
             "types": {
-                "existence": bool(prediction == 1), # Placeholder for multi-label logic
+                "existence": bool(prediction == 1),
                 "executive": False,
                 "property": False
             }

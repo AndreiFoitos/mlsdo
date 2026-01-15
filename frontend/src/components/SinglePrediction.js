@@ -150,7 +150,7 @@ function SinglePrediction() {
         <div className="status-container">
           <p><strong>Task ID:</strong> <code>{taskId}</code></p>
           <p><strong>Status:</strong> <span className={`status-${status?.toLowerCase()}`}>{status}</span></p>
-          {polling && <p className="polling-indicator">⏳ Checking for results...</p>}
+          {polling && <p className="polling-indicator">Checking for results...</p>}
         </div>
       )}
 

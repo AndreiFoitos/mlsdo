@@ -112,7 +112,7 @@ function LabelSubmission() {
       )}
 
       <div className="info-box">
-        <h4>💡 About Labeled Data</h4>
+        <h4>About Labeled Data</h4>
         <p>
           Submitting labeled examples helps improve the model's accuracy over time.
           Your contributions will be used in future model training iterations.

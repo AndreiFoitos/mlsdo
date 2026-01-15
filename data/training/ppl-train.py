@@ -15,7 +15,6 @@ POSTGRES_URL = os.getenv('POSTGRES_URL', 'postgresql://postgres:pw1@localhost:54
 MLFLOW_TRACKING_URL = os.getenv('MLFLOW_TRACKING_URL', 'http://localhost:5000')
 MLFLOW_MODEL_NAME = os.getenv('MLFLOW_MODEL_NAME', 'add_detection_model')
 
-# Hyperparameters (must be explicitly defined and logged)
 MODEL_NAME = "distilbert-base-uncased"
 LEARNING_RATE = 2e-5
 BATCH_SIZE = 8
@@ -224,4 +223,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-# trigger train_model

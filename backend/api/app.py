@@ -26,7 +26,6 @@ celery_app = Celery(
     backend=REDIS_URL
 )
 
-# Request/Response Models
 class IssueRequest(BaseModel):
     summary: str
     description: str
@@ -51,7 +50,7 @@ class BatchPredictionResponse(BaseModel):
 class LabeledIssueRequest(BaseModel):
     summary: str
     description: str
-    label: str  # 'ADD' or 'non-ADD'
+    label: str
 
 api_router = fastapi.APIRouter(prefix="/api")
 
@@ -61,10 +60,8 @@ app = fastapi.FastAPI(
     version="1.0.0"
 )
 
-# Enable Prometheus metrics
 Instrumentator().instrument(app).expose(app)
 
-# Database helper
 def get_db_connection():
     """Get PostgreSQL database connection"""
     try:
@@ -75,7 +72,6 @@ def get_db_connection():
             detail=f"Database connection failed: {str(e)}"
         )
 
-# Health check endpoint
 @app.get('/', tags=["Health"])
 async def root():
     """Root endpoint - health check"""
@@ -161,7 +157,6 @@ async def get_prediction_status(task_id: str):
             "status": task_result.status,
         }
         
-        # Include result if task is complete
         if task_result.ready():
             if task_result.successful():
                 response["result"] = task_result.result
@@ -200,7 +195,6 @@ async def search_issues(
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Search in both summary and description using ILIKE for case-insensitive search
         query = """
             SELECT id, summary, description, label, created_at
             FROM issues
@@ -213,7 +207,6 @@ async def search_issues(
         
         results = cursor.fetchall()
         
-        # Get total count for pagination info
         count_query = """
             SELECT COUNT(*) as total
             FROM issues
@@ -255,7 +248,6 @@ async def submit_labeled_issue(issue: LabeledIssueRequest):
     - **description**: Detailed issue description  
     - **label**: Ground truth label ('ADD' or 'non-ADD')
     """
-    # Validate label
     valid_labels = ['ADD', 'non-ADD']
     if issue.label not in valid_labels:
         raise fastapi.HTTPException(
@@ -267,7 +259,6 @@ async def submit_labeled_issue(issue: LabeledIssueRequest):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Insert the labeled issue into a separate table for retraining
         insert_query = """
             INSERT INTO labeled_issues (summary, description, label, created_at)
             VALUES (%s, %s, %s, %s)
@@ -312,7 +303,6 @@ async def get_labeled_count():
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Get total count and breakdown
         query = """
             SELECT 
                 COUNT(*) as total,
@@ -351,11 +341,9 @@ async def get_statistics():
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Get issue count
         cursor.execute("SELECT COUNT(*) as total FROM issues")
         issues_result = cursor.fetchone()
         
-        # Get labeled issues count
         cursor.execute("SELECT COUNT(*) as total FROM labeled_issues")
         labeled_result = cursor.fetchone()
         
@@ -368,7 +356,6 @@ async def get_statistics():
             "api_version": "1.0.0"
         }
     except Exception as e:
-        # If tables don't exist yet, return zeros
         return {
             "total_issues": 0,
             "total_labeled": 0,

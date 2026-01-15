@@ -40,7 +40,6 @@ function BatchPrediction() {
     setCompletedCount(0);
     setPolling(false);
 
-    // Validate all issues have content
     const validIssues = issues.filter(i => i.summary.trim() && i.description.trim());
     if (validIssues.length === 0) {
       setError('Please fill in at least one issue with both summary and description');
@@ -64,7 +63,7 @@ function BatchPrediction() {
       setTaskIds(ids);
       setPolling(true);
 
-      // Initialize results object
+
       const initialResults = {};
       ids.forEach((id, idx) => {
         initialResults[id] = {
@@ -75,7 +74,6 @@ function BatchPrediction() {
       });
       setResults(initialResults);
 
-      // Poll for all results
       pollForBatchResults(ids);
     } catch (err) {
       console.error('Batch submission error:', err);
@@ -233,13 +231,13 @@ function BatchPrediction() {
         </div>
 
         {!allIssuesFilled && someIssuesFilled && !loading && (
-          <p className="warning-text">⚠️ Only issues with both summary and description will be submitted</p>
+          <p className="warning-text">Only issues with both summary and description will be submitted</p>
         )}
       </form>
 
       {error && (
         <div className="error-message">
-          <strong>❌ Error:</strong> {error}
+          <strong>Error:</strong> {error}
         </div>
       )}
 
@@ -302,7 +300,7 @@ function BatchPrediction() {
       )}
 
       <div className="info-box" style={{marginTop: '2rem'}}>
-        <h4>💡 Batch Processing Tips</h4>
+        <h4>Batch Processing Tips</h4>
         <ul>
           <li>Add up to 10 issues at once for efficient processing</li>
           <li>Each issue is processed independently and asynchronously</li>
