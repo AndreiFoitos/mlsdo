@@ -107,8 +107,8 @@ services:
       - GF_SERVER_ENFORCE_DOMAIN=false
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_SECURITY_DISABLE_CSRF=true
-      - GF_AUTH_COOKIE_SAMESITE=none   
-      - GF_SECURITY_COOKIE_SAMESITE=none   
+      - GF_AUTH_COOKIE_SAMESITE=disabled  
+      - GF_SECURITY_COOKIE_SAMESITE=disabled   
       - GF_USERS_DEFAULT_ROLE=Admin
       - GF_USERS_ALLOW_ORG_CREATE=true
       - GF_AUTH_DISABLE_LOGIN_FORM=false
