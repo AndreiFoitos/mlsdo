@@ -57,3 +57,5 @@ if __name__ == "__main__":
     
     print(f"Using CSV path: {csv_path}")
     load_csv_to_postgres(csv_path, postgres_url)
+
+    # Pipeline trigger: 2026-01-16_13:51:52
