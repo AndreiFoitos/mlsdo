@@ -19,7 +19,7 @@ stages:
   before_script:
     - 'which rsync || ( apk add --update rsync )'
     - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app && sudo chown $VM_USER:$VM_USER /home/$VM_USER/app"
-    - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
+    - rsync -rtz --delete --exclude 'volumes' --exclude 'venv' --exclude '.git' --exclude '__pycache__' --exclude '*.pyc' --exclude 'node_modules' . "$CI_SSH_HOST":/home/$VM_USER/app
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && [ ! -d venv ] && python3 -m venv venv || true"
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && pip install --upgrade pip"
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && pip install -r requirements.txt"
