@@ -104,6 +104,52 @@ function IssueSearch() {
       <h2>Search Issues</h2>
       <p>Search for issues in the database using keywords</p>
 
+      <div className="how-it-works-container">
+        <div className="how-it-works-header">
+          <h3>Search Tips & Features</h3>
+          <span className="step-count">4 Tips</span>
+        </div>
+        <div className="how-it-works-steps">
+          <div className="step">
+            <div className="step-number">1</div>
+            <div className="step-content">
+              <h4>Comprehensive Search</h4>
+              <p>Search looks through both summary and description fields</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">2</div>
+            <div className="step-content">
+              <h4>Case-Insensitive</h4>
+              <p>Search is case-insensitive (e.g., "API" matches "api")</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">3</div>
+            <div className="step-content">
+              <h4>Specific Keywords</h4>
+              <p>Use specific keywords for better results</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">4</div>
+            <div className="step-content">
+              <h4>Partial Matching</h4>
+              <p>Partial word matches are supported</p>
+            </div>
+          </div>
+        </div>
+        <div className="search-examples-section">
+          <h4>Try these examples:</h4>
+          <div className="search-examples">
+            <button onClick={() => { setKeyword('authentication'); handleSearch(); }} className="example-btn">authentication</button>
+            <button onClick={() => { setKeyword('refactor'); handleSearch(); }} className="example-btn">refactor</button>
+            <button onClick={() => { setKeyword('API'); handleSearch(); }} className="example-btn">API</button>
+            <button onClick={() => { setKeyword('database'); handleSearch(); }} className="example-btn">database</button>
+          </div>
+        </div>
+      </div>
+
       <form onSubmit={handleSearch} className="search-form">
         <div className="search-input-group">
           <input
@@ -185,7 +231,7 @@ function IssueSearch() {
                 disabled={offset === 0 || loading}
                 className="btn-secondary"
               >
-                ← Previous
+                Previous
               </button>
               
               <span className="page-indicator">
@@ -197,7 +243,7 @@ function IssueSearch() {
                 disabled={offset + limit >= total || loading}
                 className="btn-secondary"
               >
-                Next →
+                Next
               </button>
             </div>
           )}
@@ -212,23 +258,6 @@ function IssueSearch() {
           <p>Try different keywords or check your spelling.</p>
         </div>
       )}
-
-      <div className="info-box" style={{marginTop: '2rem'}}>
-        <h4>Search Tips</h4>
-        <ul>
-          <li>Search looks through both summary and description fields</li>
-          <li>Search is case-insensitive (e.g., "API" matches "api")</li>
-          <li>Use specific keywords for better results</li>
-          <li>Partial word matches are supported</li>
-        </ul>
-        <h4 style={{marginTop: '1rem'}}>Example searches:</h4>
-        <div className="search-examples">
-          <button onClick={() => { setKeyword('authentication'); handleSearch(); }} className="example-btn">authentication</button>
-          <button onClick={() => { setKeyword('refactor'); handleSearch(); }} className="example-btn">refactor</button>
-          <button onClick={() => { setKeyword('API'); handleSearch(); }} className="example-btn">API</button>
-          <button onClick={() => { setKeyword('database'); handleSearch(); }} className="example-btn">database</button>
-        </div>
-      </div>
     </div>
   );
 }

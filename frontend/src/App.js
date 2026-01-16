@@ -22,10 +22,10 @@ function App() {
   }, []);
 
   const tabs = [
-    { id: 'single', label: 'Single Prediction', description: 'Classify one issue' },
-    { id: 'batch', label: 'Batch Processing', description: 'Multiple issues at once' },
-    { id: 'search', label: 'Search Database', description: 'Find existing issues' },
-    { id: 'label', label: 'Contribute Data', description: 'Help improve the model' }
+    { id: 'single', label: 'Single Prediction', icon: '▸', description: 'Classify one issue' },
+    { id: 'batch', label: 'Batch Processing', icon: '≡', description: 'Multiple issues at once' },
+    { id: 'search', label: 'Search Database', icon: '⌕', description: 'Find existing issues' },
+    { id: 'label', label: 'Contribute Data', icon: '+', description: 'Help improve the model' }
   ];
 
   return (
@@ -38,6 +38,7 @@ function App() {
         </div>
         
         <div className="hero-content">
+
           <h1 className="hero-title">
             Architectural Design Decision
             <span className="gradient-text"> Detector</span>

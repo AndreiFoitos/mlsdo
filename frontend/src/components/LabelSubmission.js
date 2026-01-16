@@ -45,12 +45,49 @@ function LabelSubmission() {
 
   return (
     <div className="prediction-container">
-      <h2>Submit Labeled Data (Bonus Feature)</h2>
+      <h2>Submit Labeled Data</h2>
       <p>Help improve the model by submitting labeled examples</p>
+
+      <div className="how-it-works-container">
+        <div className="how-it-works-header">
+          <h3>About Labeled Data</h3>
+          <span className="step-count">Contribute</span>
+        </div>
+        <div className="how-it-works-steps">
+          <div className="step">
+            <div className="step-number">1</div>
+            <div className="step-content">
+              <h4>Improve Accuracy</h4>
+              <p>Labeled examples help improve the model's accuracy over time</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">2</div>
+            <div className="step-content">
+              <h4>Future Training</h4>
+              <p>Your contributions will be used in future model training iterations</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">3</div>
+            <div className="step-content">
+              <h4>ADD Issues</h4>
+              <p>Issues that involve architectural design decisions</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">4</div>
+            <div className="step-content">
+              <h4>non-ADD Issues</h4>
+              <p>Regular issues that don't involve architectural decisions</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="prediction-form">
         <div className="form-group">
-          <label htmlFor="summary">Issue Summary:</label>
+          <label htmlFor="summary">Issue Summary</label>
           <input
             id="summary"
             type="text"
@@ -63,7 +100,7 @@ function LabelSubmission() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="description">Issue Description:</label>
+          <label htmlFor="description">Issue Description</label>
           <textarea
             id="description"
             value={description}
@@ -76,7 +113,7 @@ function LabelSubmission() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="label">Label:</label>
+          <label htmlFor="label">Label</label>
           <select
             id="label"
             value={label}
@@ -106,22 +143,10 @@ function LabelSubmission() {
 
       {success && (
         <div className="success-message">
-          <strong>✓ Success!</strong> {success}
+          <strong>Success!</strong> {success}
           <p>Thank you for contributing to model improvement!</p>
         </div>
       )}
-
-      <div className="info-box">
-        <h4>About Labeled Data</h4>
-        <p>
-          Submitting labeled examples helps improve the model's accuracy over time.
-          Your contributions will be used in future model training iterations.
-        </p>
-        <ul>
-          <li><strong>ADD:</strong> Issues that involve architectural design decisions</li>
-          <li><strong>non-ADD:</strong> Regular issues that don't involve architectural decisions</li>
-        </ul>
-      </div>
     </div>
   );
 }

@@ -63,7 +63,6 @@ function BatchPrediction() {
       setTaskIds(ids);
       setPolling(true);
 
-
       const initialResults = {};
       ids.forEach((id, idx) => {
         initialResults[id] = {
@@ -165,6 +164,43 @@ function BatchPrediction() {
       <h2>Batch Issue Prediction</h2>
       <p>Submit multiple Jira issues for ADD classification at once</p>
 
+      <div className="how-it-works-container">
+        <div className="how-it-works-header">
+          <h3>How Batch Processing Works</h3>
+          <span className="step-count">4 Key Features</span>
+        </div>
+        <div className="how-it-works-steps">
+          <div className="step">
+            <div className="step-number">1</div>
+            <div className="step-content">
+              <h4>Bulk Submission</h4>
+              <p>Add up to 10 issues at once for efficient processing</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">2</div>
+            <div className="step-content">
+              <h4>Parallel Processing</h4>
+              <p>Each issue is processed independently and asynchronously</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">3</div>
+            <div className="step-content">
+              <h4>Real-time Updates</h4>
+              <p>Results appear as soon as each prediction completes</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">4</div>
+            <div className="step-content">
+              <h4>Non-blocking</h4>
+              <p>Continue working while predictions are being processed</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="batch-form">
         {issues.map((issue, index) => (
           <div key={issue.id} className="batch-issue-item">
@@ -177,13 +213,13 @@ function BatchPrediction() {
                   className="btn-remove"
                   disabled={loading}
                 >
-                  ✕ Remove
+                  Remove
                 </button>
               )}
             </div>
 
             <div className="form-group">
-              <label>Summary: *</label>
+              <label>Summary</label>
               <input
                 type="text"
                 value={issue.summary}
@@ -195,7 +231,7 @@ function BatchPrediction() {
             </div>
 
             <div className="form-group">
-              <label>Description: *</label>
+              <label>Description</label>
               <textarea
                 value={issue.description}
                 onChange={(e) => handleIssueChange(issue.id, 'description', e.target.value)}
@@ -214,7 +250,7 @@ function BatchPrediction() {
           className="btn-add"
           disabled={loading}
         >
-          ➕ Add Another Issue
+          Add Another Issue
         </button>
 
         <div className="button-group">
@@ -246,7 +282,7 @@ function BatchPrediction() {
           <h3>Batch Processing Status</h3>
           <p>
             <strong>{completedCount} / {taskIds.length}</strong> predictions complete
-            {polling && <span className="polling-indicator"> ⏳ Processing...</span>}
+            {polling && <span className="polling-indicator"> Processing...</span>}
           </p>
           <div className="progress-bar">
             <div 
@@ -298,16 +334,6 @@ function BatchPrediction() {
           </div>
         </div>
       )}
-
-      <div className="info-box" style={{marginTop: '2rem'}}>
-        <h4>Batch Processing Tips</h4>
-        <ul>
-          <li>Add up to 10 issues at once for efficient processing</li>
-          <li>Each issue is processed independently and asynchronously</li>
-          <li>Results appear as soon as each prediction completes</li>
-          <li>You can continue working while predictions are being processed</li>
-        </ul>
-      </div>
     </div>
   );
 }

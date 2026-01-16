@@ -105,9 +105,46 @@ function SinglePrediction() {
       <h2>Single Issue Prediction</h2>
       <p>Submit a single Jira issue for ADD classification</p>
 
+      <div className="how-it-works-container">
+        <div className="how-it-works-header">
+          <h3>How It Works</h3>
+          <span className="step-count">4 Steps</span>
+        </div>
+        <div className="how-it-works-steps">
+          <div className="step">
+            <div className="step-number">1</div>
+            <div className="step-content">
+              <h4>Submit Issue</h4>
+              <p>Enter your issue summary and detailed description</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">2</div>
+            <div className="step-content">
+              <h4>Queue Task</h4>
+              <p>The system queues your prediction task</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">3</div>
+            <div className="step-content">
+              <h4>ML Processing</h4>
+              <p>The ML model analyzes your issue</p>
+            </div>
+          </div>
+          <div className="step">
+            <div className="step-number">4</div>
+            <div className="step-content">
+              <h4>Get Results</h4>
+              <p>Results appear automatically (non-blocking)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="prediction-form">
         <div className="form-group">
-          <label htmlFor="summary">Issue Summary: *</label>
+          <label htmlFor="summary">Issue Summary</label>
           <input
             id="summary"
             type="text"
@@ -122,7 +159,7 @@ function SinglePrediction() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="description">Issue Description: *</label>
+          <label htmlFor="description">Issue Description</label>
           <textarea
             id="description"
             value={description}
@@ -185,15 +222,6 @@ function SinglePrediction() {
           </div>
         </div>
       )}
-      <div className="info-box" style={{marginTop: '2rem'}}>
-        <h4>How it works</h4>
-        <ol>
-          <li>Submit your issue summary and description</li>
-          <li>The system queues your prediction task</li>
-          <li>The ML model processes your request</li>
-          <li>Results appear automatically (non-blocking)</li>
-        </ol>
-      </div>
     </div>
   );
 }
