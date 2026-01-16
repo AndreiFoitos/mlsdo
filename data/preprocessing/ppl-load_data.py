@@ -74,5 +74,4 @@ if __name__ == "__main__":
     
     csv_path = os.getenv('CSV_PATH', 'issue_with_labels.csv')
     load_csv_to_postgres(csv_path, DB_CONFIG)
-    
     # Pipeline trigger: 2026-01-16_13:52:05
