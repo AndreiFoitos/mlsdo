@@ -9,14 +9,6 @@ POSTGRES_DB = os.getenv('POSTGRES_DB', 'reviews_db')
 POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'pw1')
 
-conn = psycopg2.connect(
-    host=POSTGRES_HOST,
-    port=POSTGRES_PORT,
-    dbname=POSTGRES_DB,
-    user=POSTGRES_USER,
-    password=POSTGRES_PASSWORD
-)
-
 def load_csv_to_postgres(csv_file_path, db_config):
     if not os.path.exists(csv_file_path):
         print(f"Error: {csv_file_path} not found. Run 'dvc repro' first.")
@@ -74,4 +66,3 @@ if __name__ == "__main__":
     
     csv_path = os.getenv('CSV_PATH', 'issue_with_labels.csv')
     load_csv_to_postgres(csv_path, DB_CONFIG)
-    # Pipeline trigger: 2026-01-16_13:52:05
