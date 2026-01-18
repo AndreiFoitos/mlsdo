@@ -1,5 +1,6 @@
 variables:
   VM_USER: "warpgate"
+  POSTGRES_URL: "postgresql://postgres:pw1@localhost:5432/reviews_db"
 
 image: finalgene/openssh
 
