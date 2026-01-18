@@ -55,7 +55,7 @@ update_data:
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/reviews_db' && export CSV_PATH='data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='$POSTGRES_URL' && export CSV_PATH='data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
   rules:
     - changes:
         - data/preprocessing/**
