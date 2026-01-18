@@ -56,7 +56,7 @@ update_data:
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='$POSTGRES_URL' && export CSV_PATH='data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/reviews_db' && export CSV_PATH='data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
   rules:
     - changes:
         - data/preprocessing/**
@@ -67,7 +67,7 @@ train_model:
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='$POSTGRES_URL' && export REDIS_URL='redis://localhost:6379/0' && export MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' && export MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' && python3 data/training/ppl-train.py"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='$POSTGRES_URL' && export REDIS_URL='redis://localhost:6379/0' && export MLFLOW_TRACKING_URI='http://localhost:5000' && export MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' && python3 data/training/ppl-train.py"
   rules:
     - changes:
         - data/training/**
