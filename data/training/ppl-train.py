@@ -250,16 +250,20 @@ def main():
         })
 
         print('7. Storing Model Artifacts...')
-        mlflow.pytorch.log_model(
-            model,
-            artifact_path='trained-model',
-            registered_model_name=os.getenv('MLFLOW_MODEL_NAME')
-        )
+        if CI_MODE:
+            print("[CI_MODE] Skipping mlflow model artifact logging to avoid MinIO/S3 credentials requirement.")
+        else:
+            mlflow.pytorch.log_model(
+                model,
+                artifact_path='trained-model',
+                registered_model_name=os.getenv('MLFLOW_MODEL_NAME')
+            )
 
-        mlflow.transformers.log_model(
-            transformers.pipeline('text-classification', model=model, tokenizer=tokenizer),
-            artifact_path="pipeline"
-        )
+            mlflow.transformers.log_model(
+                transformers.pipeline('text-classification', model=model, tokenizer=tokenizer),
+                artifact_path="pipeline"
+            )
+
         print('Done.')
 
 if __name__ == '__main__':
