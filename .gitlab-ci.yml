@@ -1,5 +1,6 @@
 variables:
   VM_USER: "warpgate"
+  POSTGRES_URL: "postgresql://postgres:pw1@localhost:5432/reviews_db"
 
 image: finalgene/openssh
 
@@ -19,8 +20,10 @@ stages:
   before_script:
     - 'which rsync || ( apk add --update rsync )'
     - ssh "$CI_SSH_HOST" "sudo mkdir -p /home/$VM_USER/app && sudo chown $VM_USER:$VM_USER /home/$VM_USER/app"
-    - rsync -rtvz --delete --exclude 'volumes' . "$CI_SSH_HOST":/home/$VM_USER/app
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && pip3 install --user -r requirements.txt"
+    - rsync -rtz --delete --exclude 'volumes' --exclude 'venv' --exclude '.git' --exclude '__pycache__' --exclude '*.pyc' --exclude 'node_modules' . "$CI_SSH_HOST":/home/$VM_USER/app
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && [ ! -d venv ] && python3 -m venv venv || true"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && pip install --upgrade pip"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && pip install -r requirements.txt"
 
 build_app:
   stage: build
@@ -53,18 +56,19 @@ update_data:
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && export POSTGRES_URL='$POSTGRES_URL' && export POSTGRES_HOST='localhost' && export POSTGRES_PORT='5432' && export POSTGRES_DB='reviews_db' && export POSTGRES_USER='postgres' && export POSTGRES_PASSWORD='$POSTGRES_PASSWORD' && export CSV_PATH='/home/$VM_USER/app/data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export POSTGRES_URL='$POSTGRES_URL' && export CSV_PATH='data/issue_with_labels.csv' && python3 data/preprocessing/ppl-load_data.py"
   rules:
     - changes:
         - data/preprocessing/**
         - data/issue_with_labels.csv
+
 
 train_model:
   stage: training
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && export POSTGRES_URL='$POSTGRES_URL' && export REDIS_URL='redis://localhost:6379/0' && export MLFLOW_TRACKING_URL='$MLFLOW_TRACKING_URL' && export MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' && python3 data/training/ppl-train.py"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export CI_MODE=true && export POSTGRES_URL='$POSTGRES_URL' && export REDIS_URL='redis://localhost:6379/0' && export MLFLOW_TRACKING_URI='http://localhost:5000' && export MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' && python3 data/training/ppl-train.py"
   rules:
     - changes:
         - data/training/**

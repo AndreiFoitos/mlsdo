@@ -3,27 +3,15 @@ import pandas as pd
 import psycopg2
 from psycopg2 import extras
 
-POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
-POSTGRES_DB = os.getenv('POSTGRES_DB', 'reviews_db')
-POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'pw1')
-
-conn = psycopg2.connect(
-    host=POSTGRES_HOST,
-    port=POSTGRES_PORT,
-    dbname=POSTGRES_DB,
-    user=POSTGRES_USER,
-    password=POSTGRES_PASSWORD
-)
-
-def load_csv_to_postgres(csv_file_path, db_config):
+def load_csv_to_postgres(csv_file_path, postgres_url):
     if not os.path.exists(csv_file_path):
         print(f"Error: {csv_file_path} not found. Run 'dvc repro' first.")
         return
     
     df = pd.read_csv(csv_file_path)
-    conn = psycopg2.connect(**db_config)
+    
+    print(f"Connecting to database...")
+    conn = psycopg2.connect(postgres_url)
     cursor = conn.cursor()
 
     print("Creating table 'processed_issues'...")
@@ -64,13 +52,10 @@ def load_csv_to_postgres(csv_file_path, db_config):
         conn.close()
 
 if __name__ == "__main__":
-    DB_CONFIG = {
-        'dbname': os.getenv('POSTGRES_DB', 'reviews_db'),
-        'user': os.getenv('POSTGRES_USER', 'postgres'),
-        'password': os.getenv('POSTGRES_PASSWORD', 'pw1'),
-        'host': os.getenv('POSTGRES_HOST', 'localhost'),
-        'port': int(os.getenv('POSTGRES_PORT', '5432'))
-    }
-    
+    postgres_url = os.getenv('POSTGRES_URL', 'postgresql://postgres:pw1@localhost:5432/reviews_db')
     csv_path = os.getenv('CSV_PATH', 'issue_with_labels.csv')
-    load_csv_to_postgres(csv_path, DB_CONFIG)
+    
+    print(f"Using CSV path: {csv_path}")
+    load_csv_to_postgres(csv_path, postgres_url)
+
+    # Pipeline trigger: 2026-01-16_13:51:52
