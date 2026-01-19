@@ -63,6 +63,7 @@ function BatchPrediction() {
       setTaskIds(ids);
       setPolling(true);
 
+      // Create initial results with proper issue index mapping
       const initialResults = {};
       ids.forEach((id, idx) => {
         initialResults[id] = {
@@ -73,7 +74,7 @@ function BatchPrediction() {
       });
       setResults(initialResults);
 
-      pollForBatchResults(ids);
+      pollForBatchResults(ids, initialResults);
     } catch (err) {
       console.error('Batch submission error:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to submit batch prediction');
@@ -82,7 +83,7 @@ function BatchPrediction() {
     }
   };
 
-  const pollForBatchResults = async (ids) => {
+  const pollForBatchResults = async (ids, initialResults) => {
     const maxAttempts = 60;
     let attempts = 0;
 
@@ -104,8 +105,10 @@ function BatchPrediction() {
           const taskData = response.data;
           const taskId = ids[index];
           
+          // Preserve the issueIndex from initialResults
           newResults[taskId] = {
-            ...results[taskId],
+            issueIndex: initialResults[taskId].issueIndex,
+            summary: initialResults[taskId].summary,
             status: taskData.status,
             result: taskData.result,
             error: taskData.error
@@ -297,7 +300,7 @@ function BatchPrediction() {
         <div className="results-container">
           <h3>Batch Results</h3>
           <div className="batch-results-grid">
-            {Object.entries(results).map(([taskId, data], index) => (
+            {Object.entries(results).map(([taskId, data]) => (
               <div key={taskId} className={`batch-result-card status-${data.status?.toLowerCase()}`}>
                 <div className="card-header">
                   <h4>Issue #{data.issueIndex + 1}</h4>

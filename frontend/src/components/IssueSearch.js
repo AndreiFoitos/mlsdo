@@ -13,10 +13,13 @@ function IssueSearch() {
   const [limit] = useState(50);
   const [offset, setOffset] = useState(0);
 
-  const handleSearch = async (e, newOffset = 0) => {
+  const handleSearch = async (e, newOffset = 0, searchKeyword = null) => {
     if (e) e.preventDefault();
     
-    if (!keyword.trim()) {
+    // Use provided keyword or current state
+    const keywordToSearch = searchKeyword !== null ? searchKeyword : keyword;
+    
+    if (!keywordToSearch.trim()) {
       setError('Please enter a search keyword');
       return;
     }
@@ -27,11 +30,11 @@ function IssueSearch() {
     setOffset(newOffset);
 
     try {
-      console.log('Searching for:', keyword, 'offset:', newOffset);
+      console.log('Searching for:', keywordToSearch, 'offset:', newOffset);
       
       const response = await axios.get(`${API_BASE_URL}/issues/search`, {
         params: {
-          keyword: keyword.trim(),
+          keyword: keywordToSearch.trim(),
           limit: limit,
           offset: newOffset
         }
@@ -70,6 +73,12 @@ function IssueSearch() {
     if (offset > 0) {
       handleSearch(null, Math.max(0, offset - limit));
     }
+  };
+
+  const handleExampleClick = (exampleKeyword) => {
+    setKeyword(exampleKeyword);
+    // Pass the keyword directly to handleSearch
+    handleSearch(null, 0, exampleKeyword);
   };
 
   const formatDate = (dateString) => {
@@ -142,10 +151,18 @@ function IssueSearch() {
         <div className="search-examples-section">
           <h4>Try these examples:</h4>
           <div className="search-examples">
-            <button onClick={() => { setKeyword('authentication'); handleSearch(); }} className="example-btn">authentication</button>
-            <button onClick={() => { setKeyword('refactor'); handleSearch(); }} className="example-btn">refactor</button>
-            <button onClick={() => { setKeyword('API'); handleSearch(); }} className="example-btn">API</button>
-            <button onClick={() => { setKeyword('database'); handleSearch(); }} className="example-btn">database</button>
+            <button onClick={() => handleExampleClick('authentication')} className="example-btn" disabled={loading}>
+              authentication
+            </button>
+            <button onClick={() => handleExampleClick('refactor')} className="example-btn" disabled={loading}>
+              refactor
+            </button>
+            <button onClick={() => handleExampleClick('API')} className="example-btn" disabled={loading}>
+              API
+            </button>
+            <button onClick={() => handleExampleClick('database')} className="example-btn" disabled={loading}>
+              database
+            </button>
           </div>
         </div>
       </div>

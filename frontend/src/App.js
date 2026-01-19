@@ -10,8 +10,7 @@ function App() {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Fetch stats on mount
+  const fetchStats = () => {
     fetch('/api/stats')
       .then(res => res.json())
       .then(data => {
@@ -19,6 +18,11 @@ function App() {
         setIsLoading(false);
       })
       .catch(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    // Fetch stats on mount
+    fetchStats();
   }, []);
 
   const tabs = [
@@ -99,7 +103,7 @@ function App() {
               {activeTab === 'single' && <SinglePrediction />}
               {activeTab === 'batch' && <BatchPrediction />}
               {activeTab === 'search' && <IssueSearch />}
-              {activeTab === 'label' && <LabelSubmission />}
+              {activeTab === 'label' && <LabelSubmission onSubmitSuccess={fetchStats} />}
             </div>
           </div>
         </div>

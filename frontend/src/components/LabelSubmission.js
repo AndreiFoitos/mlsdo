@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_BASE_URL = '/api';
 
-function LabelSubmission() {
+function LabelSubmission({ onSubmitSuccess }) {
   const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
   const [label, setLabel] = useState('ADD');
@@ -29,6 +29,11 @@ function LabelSubmission() {
       setDescription('');
       setLabel('ADD');
       setLoading(false);
+      
+      // Call the callback to refresh stats in parent component
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to submit labeled issue');
       setLoading(false);
