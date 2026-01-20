@@ -30,5 +30,5 @@ dependencies:
     - celery==5.6.2
     - redis==4.5.5 
     - prometheus-fastapi-instrumentator
-    
+    - boto3
     # Pipeline trigger: 2026-01-16_13:51:52
