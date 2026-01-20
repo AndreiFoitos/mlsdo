@@ -45,6 +45,15 @@ def trigger_gitlab_training_pipeline():
         logging.error(f"Failed to trigger GitLab pipeline: {e}")
 
 
+def should_trigger_retraining(conn, threshold=1):
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM labeled_issues")
+    count = cursor.fetchone()[0]
+    cursor.close()
+    return count % threshold == 0
+
+
+
 
 class TaskStatus(str, Enum):
     PENDING = "PENDING"
@@ -304,7 +313,9 @@ async def submit_labeled_issue(issue: LabeledIssueRequest):
         issue_id = cursor.fetchone()[0]
         
         conn.commit()
-        trigger_gitlab_training_pipeline()
+        if should_trigger_retraining(conn):
+            trigger_gitlab_training_pipeline()
+
         cursor.close()
         conn.close()
         
