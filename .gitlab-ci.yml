@@ -46,11 +46,19 @@ setup_infra:
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "sudo docker stop mlsdo-lab5-minio-mlflow-1 || true"
+    - |
+      ssh $CI_SSH_HOST "
+        cd /home/$VM_USER/app &&
+        cat <<EOF > .env
+        GITLAB_TRIGGER_TOKEN=$GITLAB_TRIGGER_TOKEN
+        GITLAB_PROJECT_ID=$GITLAB_PROJECT_ID
+        GITLAB_REF=$GITLAB_REF
+        MLFLOW_MODEL_NAME=$MLFLOW_MODEL_NAME
+        EOF
+      "
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose down && sudo docker compose up -d"
   rules:
     - when: always
-
 update_data:
   stage: update
   before_script:
