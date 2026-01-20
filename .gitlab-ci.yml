@@ -70,6 +70,7 @@ train_model:
   script:
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && source venv/bin/activate && export CI_MODE=true && export POSTGRES_URL='$POSTGRES_URL' && export REDIS_URL='redis://localhost:6379/0' && export MLFLOW_TRACKING_URI='http://localhost:5000' && export MLFLOW_MODEL_NAME='$MLFLOW_MODEL_NAME' && python3 data/training/ppl-train.py"
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
     - changes:
         - data/training/**
         - environment.yml

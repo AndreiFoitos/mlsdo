@@ -24,6 +24,9 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - GITLAB_TRIGGER_TOKEN=${GITLAB_TRIGGER_TOKEN}
+      - GITLAB_PROJECT_ID=${GITLAB_PROJECT_ID}
+      - GITLAB_REF=develop
       - POSTGRES_URL=postgresql://postgres:pw1@postgres-ml:5432/reviews_db
       - REDIS_URL=redis://redis:6379/0
       - MLFLOW_TRACKING_URI=http://mlflow:5000

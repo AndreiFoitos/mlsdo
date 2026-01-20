@@ -1,4 +1,6 @@
 import os
+import requests
+import logging
 import fastapi
 from pydantic import BaseModel
 from typing import List, Optional, Any, Dict
@@ -10,8 +12,39 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
+
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
 POSTGRES_URL = os.environ.get('POSTGRES_URL', 'postgresql://postgres:pw1@postgres-ml:5432/reviews_db')
+
+
+def trigger_gitlab_training_pipeline():
+    """
+    Triggers a GitLab pipeline to retrain the model
+    """
+    gitlab_project_id = os.getenv("GITLAB_PROJECT_ID")
+    gitlab_trigger_token = os.getenv("GITLAB_TRIGGER_TOKEN")
+    gitlab_ref = os.getenv("GITLAB_REF", "main")
+
+    if not gitlab_project_id or not gitlab_trigger_token:
+        logging.warning("GitLab trigger not configured — skipping retraining")
+        return
+
+    url = f"https://gitlab.com/api/v4/projects/{gitlab_project_id}/trigger/pipeline"
+
+    payload = {
+        "token": gitlab_trigger_token,
+        "ref": gitlab_ref,
+        "variables[RETRAIN_REASON]": "new_labeled_data"
+    }
+
+    try:
+        response = requests.post(url, data=payload, timeout=5)
+        response.raise_for_status()
+        logging.info("GitLab training pipeline triggered successfully")
+    except Exception as e:
+        logging.error(f"Failed to trigger GitLab pipeline: {e}")
+
+
 
 class TaskStatus(str, Enum):
     PENDING = "PENDING"
@@ -271,6 +304,7 @@ async def submit_labeled_issue(issue: LabeledIssueRequest):
         issue_id = cursor.fetchone()[0]
         
         conn.commit()
+        trigger_gitlab_training_pipeline()
         cursor.close()
         conn.close()
         
