@@ -83,7 +83,7 @@ lint_code:
         cd /home/$VM_USER/app &&
         source venv/bin/activate &&
         pip install pylint &&
-        pylint backend/api backend/inference --fail-under=7.0
+        pylint backend/api backend/inference --fail-under=8.0
       "
   rules:
     - if: '$CI_COMMIT_BRANCH=="develop"'
