@@ -111,7 +111,7 @@ def get_db_connection():
         return psycopg2.connect(POSTGRES_URL)
     except Exception as e:
         raise fastapi.HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Database connection failed: {str(e)}"
         )
 
@@ -237,7 +237,7 @@ async def search_issues(
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
+
         query = """
             SELECT id, summary, description, label, created_at
             FROM issues
@@ -247,9 +247,9 @@ async def search_issues(
         """
         search_pattern = f"%{keyword}%"
         cursor.execute(query, (search_pattern, search_pattern, limit, offset))
-        
+
         results = cursor.fetchall()
-        
+
         count_query = """
             SELECT COUNT(*) as total
             FROM issues
@@ -257,10 +257,10 @@ async def search_issues(
         """
         cursor.execute(count_query, (search_pattern, search_pattern))
         total = cursor.fetchone()['total']
-        
+
         cursor.close()
         conn.close()
-        
+
         return {
             "results": results,
             "total": total,
@@ -297,29 +297,29 @@ async def submit_labeled_issue(issue: LabeledIssueRequest):
             status_code=400,
             detail=f"Invalid label. Must be one of: {valid_labels}"
         )
-    
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         insert_query = """
             INSERT INTO labeled_issues (summary, description, label, created_at)
             VALUES (%s, %s, %s, %s)
             RETURNING id
         """
         cursor.execute(
-            insert_query, 
+            insert_query,
             (issue.summary, issue.description, issue.label, datetime.now())
         )
         issue_id = cursor.fetchone()[0]
-        
+
         conn.commit()
         if should_trigger_retraining(conn):
             trigger_gitlab_training_pipeline()
 
         cursor.close()
         conn.close()
-        
+
         return {
             "id": issue_id,
             "message": "Labeled issue submitted successfully",
@@ -348,7 +348,7 @@ async def get_labeled_count():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
+
         query = """
             SELECT 
                 COUNT(*) as total,
@@ -358,10 +358,10 @@ async def get_labeled_count():
         """
         cursor.execute(query)
         result = cursor.fetchone()
-        
+
         cursor.close()
         conn.close()
-        
+
         return {
             "total": result['total'] or 0,
             "add_count": result['add_count'] or 0,
@@ -386,16 +386,16 @@ async def get_statistics():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
+
         cursor.execute("SELECT COUNT(*) as total FROM issues")
         issues_result = cursor.fetchone()
-        
+
         cursor.execute("SELECT COUNT(*) as total FROM labeled_issues")
         labeled_result = cursor.fetchone()
-        
+
         cursor.close()
         conn.close()
-        
+
         return {
             "total_issues": issues_result['total'] if issues_result else 0,
             "total_labeled": labeled_result['total'] if labeled_result else 0,
