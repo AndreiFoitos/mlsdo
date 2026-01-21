@@ -104,12 +104,12 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev:3000
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_SERVER_ROOT_URL=https://mlops.digital-lab.dev/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SERVER_DOMAIN=mlops.digital-lab.dev
       - GF_SERVER_ENFORCE_DOMAIN=false
       - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_SECURITY_DISABLE_CSRF=true
+      #- GF_SECURITY_DISABLE_CSRF=true
       - GF_AUTH_COOKIE_SAMESITE=disabled  
       - GF_SECURITY_COOKIE_SAMESITE=disabled   
       - GF_USERS_DEFAULT_ROLE=Admin
@@ -118,6 +118,7 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=
       - GF_SECURITY_COOKIE_SECURE=false   
       - GF_AUTH_PROXY_ENABLED=false  
+      - GF_SECURITY_CSRF_TRUSTED_ORIGINS=mlops.digital-lab.dev
     networks:
       - assignment
     depends_on:
