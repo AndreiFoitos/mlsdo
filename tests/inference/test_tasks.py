@@ -18,17 +18,24 @@ def test_classify_issue_prediction(mock_model_tokenizer, mock_failure, mock_succ
     mock_model = MagicMock()
     mock_tokenizer = MagicMock()
     mock_tokenizer.return_value = {"input_ids": MagicMock(), "attention_mask": MagicMock()}
-    mock_model_tokenizer.return_value = (mock_model, mock_tokenizer)
-
-    # Mock model outputs
+    
+    # When the model is called, return an object with logits
     mock_output = MagicMock()
     mock_output.logits = logits
-    mock_model.__call__.return_value = mock_output
+    mock_model.return_value = mock_output  # <-- correct way
 
-    # Call task
+    # Patch property to return mock model and tokenizer
+    mock_model_tokenizer.return_value = (mock_model, mock_tokenizer)
+
+    # Prepare task and dummy request
     task = classify_issue
     task.request = DummyRequest()
+
+    # Call task
     result = task(task.request.id, "summary", "description")
 
+    # Assertions
     assert isinstance(result, dict)
     assert result["label"] == expected_label
+    assert "probability" in result
+    assert "types" in result
