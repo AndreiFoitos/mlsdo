@@ -100,14 +100,12 @@ run_tests:
       ssh $CI_SSH_HOST "
         cd /home/$VM_USER/app &&
         source venv/bin/activate &&
-        pip install pytest &&
+        pip install pytest pytest-mock &&
         pytest tests --maxfail=1 --disable-warnings
       "
   rules:
     - if: '$CI_COMMIT_BRANCH=="develop"'
-    - changes:
-        - backend/api/**
-        - backend/inference/**
+    - when: always
 
 train_model:
   stage: training
