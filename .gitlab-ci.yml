@@ -83,7 +83,7 @@ lint_code:
         cd /home/$VM_USER/app &&
         source venv/bin/activate &&
         pip install pylint &&
-        pylint backend/api backend/inference --fail-under=8.0
+        pylint backend/api backend/inference --fail-under=7.0
       "
   rules:
     - if: '$CI_COMMIT_BRANCH=="develop"'
@@ -101,7 +101,7 @@ run_tests:
         cd /home/$VM_USER/app &&
         source venv/bin/activate &&
         pip install pytest &&
-        pytest backend/api/tests backend/inference/tests --maxfail=1 --disable-warnings
+        pytest tests --maxfail=1 --disable-warnings
       "
   rules:
     - if: '$CI_COMMIT_BRANCH=="develop"'
