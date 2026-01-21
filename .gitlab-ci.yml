@@ -8,6 +8,8 @@ stages:
   - build
   - setup
   - update
+  - lint
+  - test
   - training
   - deploy
 
@@ -59,6 +61,7 @@ setup_infra:
     - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose down && sudo docker compose up -d"
   rules:
     - when: always
+
 update_data:
   stage: update
   before_script:
@@ -70,6 +73,41 @@ update_data:
         - data/preprocessing/**
         - data/issue_with_labels.csv
 
+lint_code:
+  stage: lint
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - |
+      ssh $CI_SSH_HOST "
+        cd /home/$VM_USER/app &&
+        source venv/bin/activate &&
+        pip install pylint &&
+        pylint backend/api backend/inference --fail-under=8.0
+      "
+  rules:
+    - if: '$CI_COMMIT_BRANCH=="develop"'
+    - changes:
+        - backend/api/**
+        - backend/inference/**
+
+run_tests:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - |
+      ssh $CI_SSH_HOST "
+        cd /home/$VM_USER/app &&
+        source venv/bin/activate &&
+        pip install pytest &&
+        pytest backend/api/tests backend/inference/tests --maxfail=1 --disable-warnings
+      "
+  rules:
+    - if: '$CI_COMMIT_BRANCH=="develop"'
+    - changes:
+        - backend/api/**
+        - backend/inference/**
 
 train_model:
   stage: training
