@@ -107,11 +107,11 @@ def _mark_success(task_id: str, label: str, probability: float, types: dict):
     try:
         with conn.cursor() as cur:
             cur.execute(UPDATE_SUCCESS_SQL, (
-                label, 
-                float(probability), 
-                types.get('existence'), 
-                types.get('executive'), 
-                types.get('property'), 
+                label,
+                float(probability),
+                types.get('existence'),
+                types.get('executive'),
+                types.get('property'),
                 "SUCCESS", 
                 task_id
             ))
@@ -154,7 +154,8 @@ class MLModelTask(Task):
 
             logger.info(f"Loading model from registry: {model_uri}")
             self.__class__._model = mlflow.pytorch.load_model(model_uri)
-            self.__class__._tokenizer = transformers.AutoTokenizer.from_pretrained("distilbert-base-uncased")
+            self.__class__._tokenizer = transformers.AutoTokenizer.from_pretrained(
+                "distilbert-base-uncased")
 
             self.__class__._device = "cuda" if torch.cuda.is_available() else "cpu"
             self.__class__._model.to(self.__class__._device)
