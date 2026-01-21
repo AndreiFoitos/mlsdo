@@ -14,7 +14,8 @@ from datetime import datetime
 
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
-POSTGRES_URL = os.environ.get('POSTGRES_URL', 'postgresql://postgres:pw1@postgres-ml:5432/reviews_db')
+POSTGRES_URL = os.environ.get('POSTGRES_URL',
+                               'postgresql://postgres:pw1@postgres-ml:5432/reviews_db')
 
 
 def trigger_gitlab_training_pipeline():
@@ -169,7 +170,7 @@ async def predict_batch_async(batch: BatchIssueRequest) -> BatchPredictionRespon
                 args=[issue.summary, issue.description]
             )
             task_ids.append(str(task.id))
-        
+
         return BatchPredictionResponse(task_ids=task_ids, status="PENDING")
     except Exception as e:
         raise fastapi.HTTPException(
@@ -193,18 +194,18 @@ async def get_prediction_status(task_id: str):
     """
     try:
         task_result = AsyncResult(task_id, app=celery_app)
-        
+
         response = {
             "task_id": task_id,
             "status": task_result.status,
         }
-        
+
         if task_result.ready():
             if task_result.successful():
                 response["result"] = task_result.result
             else:
                 response["error"] = str(task_result.result)
-        
+
         return response
     except Exception as e:
         raise fastapi.HTTPException(
@@ -232,7 +233,7 @@ async def search_issues(
             status_code=400,
             detail="Keyword parameter is required and cannot be empty"
         )
-    
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)

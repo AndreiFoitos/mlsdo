@@ -9,12 +9,12 @@ POSTGRES_URL = os.environ.get(
 
 def create_tables():
     """Create all required database tables"""
-    
+
     print("🔌 Connecting to database...")
     conn = psycopg2.connect(POSTGRES_URL)
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = conn.cursor()
-    
+
     print("Creating 'issues' table...")
     create_issues_table = """
     CREATE TABLE IF NOT EXISTS issues (
@@ -32,7 +32,7 @@ def create_tables():
     """
     cursor.execute(create_issues_table)
     print("'issues' table ready")
-    
+
     print("Creating search index on 'issues' table...")
     create_issues_index = """
     CREATE INDEX IF NOT EXISTS idx_issues_search 
@@ -40,7 +40,7 @@ def create_tables():
     """
     cursor.execute(create_issues_index)
     print("Search index created")
-    
+
     print("Creating 'labeled_issues' table...")
     create_labeled_table = """
     CREATE TABLE IF NOT EXISTS labeled_issues (
@@ -55,7 +55,7 @@ def create_tables():
     """
     cursor.execute(create_labeled_table)
     print("'labeled_issues' table ready")
-    
+
 
     print("Creating index on 'labeled_issues' table...")
     create_labeled_index = """
@@ -64,7 +64,7 @@ def create_tables():
     """
     cursor.execute(create_labeled_index)
     print("Index on labeled_issues created")
-    
+
     print("Inserting sample data...")
     insert_sample_data = """
     INSERT INTO issues (summary, description, label)
@@ -79,40 +79,40 @@ def create_tables():
         print("Sample data inserted")
     except Exception as e:
         print(f"Could not insert sample data (may already exist): {e}")
-    
+
     cursor.close()
     conn.close()
-    
+
     print("\nDatabase initialization complete!")
     print("=" * 50)
 
 def verify_tables():
     """Verify that all tables were created successfully"""
-    
+
     print("\nVerifying tables...")
     conn = psycopg2.connect(POSTGRES_URL)
     cursor = conn.cursor()
-    
+
     cursor.execute("""
         SELECT table_name 
         FROM information_schema.tables 
         WHERE table_schema = 'public'
         AND table_name IN ('issues', 'labeled_issues')
     """)
-    
+
     tables = cursor.fetchall()
     table_names = [t[0] for t in tables]
-    
+
     print(f"Found tables: {table_names}")
 
     for table in table_names:
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
         count = cursor.fetchone()[0]
         print(f"  - {table}: {count} rows")
-    
+
     cursor.close()
     conn.close()
-    
+
     if len(table_names) == 2:
         print("All tables verified successfully!")
     else:
