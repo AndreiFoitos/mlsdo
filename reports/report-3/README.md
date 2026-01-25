@@ -22,9 +22,11 @@ Names:
 | Andrei-George Iclodean | ~30 hours | MLOps & Training | Implemented training scripts, retraining triggers, MLflow integration, hyperparameter updates |
 | Andrei-George Iclodean | ~20 hours | Data Engineering | CSV loading, PostgreSQL integration, DVC usage, data preprocessing pipelines |
 | Andrei-George Iclodean | ~10–15 hours | Documentation & Reports | Refactored README, added architecture descriptions, model cards, and reports |
-| Yuwen Zhou | ~25 hours | Data & Preprocessing | Prepared datasets, implemented preprocessing scripts, managed DVC tracking |
-| Yuwen Zhou | ~12 hours | CI/CD Support | Fixed CI time limits, modified update_data jobs |
+| Yuwen Zhou | ~50 hours | Data & Preprocessing | Prepared datasets, implemented preprocessing scripts, managed DVC tracking |
+| Yuwen Zhou | ~20 hours | CI/CD Support | Fixed CI time limits, modified update_data jobs |
 | Yuwen Zhou | ~10 hours | Backend | Backend updates, cleanup, removal of unused files |
+| Yuwen Zhou | ~10 hours | Testing | Executed tests on data pipelines, preprocessing scripts, and minor backend components |
+| Yuwen Zhou | ~10 hours | Documentation & System Diagrams | Wrote documentation for datasets, preprocessing scripts, and generated system diagrams for project reports |
 
 ## Agreed-Upon Collaboration Rules and Practices
 

@@ -1,12 +1,5 @@
 # ADD Detection System
 
-**Machine Learning Systems Deployment and Optimizations**  
-University of Groningen | Academic Year 2025-2026
-
-A production-ready machine learning system for automatically detecting Architectural Design Decisions (ADDs) in software issue tracking systems using deep learning.
-
----
-
 ## Overview
 
 This system addresses the challenge of identifying Architectural Design Decisions (ADDs) in software development issues. ADDs represent critical knowledge about why a system is designed a certain way, but this information is often scattered across issue tracking systems and rarely explicitly documented.
