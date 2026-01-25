@@ -10,12 +10,12 @@ Names:
 
 | Member | Time Spent (est.) | Topic | Action |
 |--------|------------------|-------|--------|
-| Andrei Foitos | ~20 hours | Observability & Monitoring | Configured Grafana services, security settings, root URLs, cookies, CSRF protection, embedding, datasources, and Docker Compose deployment |
-| Andrei Foitos | ~30 hours | Code Quality & Testing | Refactored backend code for readability, improved consistency, added and refactored unit tests, parameterized tests, improved mocking |
+| Andrei Foitos | ~30 hours | Observability & Monitoring | Configured Grafana services, security settings, root URLs, cookies, CSRF protection, embedding, datasources, and Docker Compose deployment |
+| Andrei Foitos | ~40 hours | Code Quality & Testing | Refactored backend code for readability, improved consistency, added and refactored unit tests, parameterized tests, improved mocking |
 | Andrei Foitos | ~20 hours | CI/CD Improvements | Added linting and testing stages, adjusted pylint thresholds, updated CI structure |
-| Andrei Foitos | ~50 hours | Frontend | Initialized frontend, improved UI/UX, updated response formats |
-| Andrei Foitos | ~10 hours | Documentation & Reports | Refactored README, added architecture descriptions, model cards, and reports |
-| **Andrei Foitos – Total** | **~130 hours** |  |  |
+| Andrei Foitos | ~60 hours | Frontend | Initialized frontend, improved UI/UX, updated response formats |
+| Andrei Foitos | ~15 hours | Documentation & Reports | Refactored README, added architecture descriptions, model cards, and reports |
+| **Andrei Foitos – Total** | **~165 hours** |  |  |
 | Andrei-George Iclodean | ~15 hours | Docker & Deployment | Refactored Dockerfiles, docker-compose services and networking |
 | Andrei-George Iclodean | ~80 hours | CI/CD Pipeline & Infrastructure | Designed and iterated GitLab CI pipeline, added build/train/update/deploy stages, triggers, rules, SSH automation |
 | Andrei-George Iclodean | ~45 hours | Backend & API | Implemented FastAPI endpoints, Celery tasks, inference logic, database handling, task status management |
