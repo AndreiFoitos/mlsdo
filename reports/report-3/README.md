@@ -15,21 +15,21 @@ Names:
 | Andrei Foitos | ~20 hours | CI/CD Improvements | Added linting and testing stages, adjusted pylint thresholds, updated CI structure |
 | Andrei Foitos | ~60 hours | Frontend | Initialized frontend, improved UI/UX, updated response formats |
 | Andrei Foitos | ~15 hours | Documentation & Reports | Refactored README, added architecture descriptions, model cards, and reports |
-| **Andrei Foitos – Total** | **~165 hours** |  |  |
+| __Andrei Foitos – Total__ | __~165 hours__ |  |  |
 | Andrei-George Iclodean | ~15 hours | Docker & Deployment | Refactored Dockerfiles, docker-compose services and networking |
-| Andrei-George Iclodean | ~80 hours | CI/CD Pipeline & Infrastructure | Designed and iterated GitLab CI pipeline, added build/train/update/deploy stages, triggers, rules, SSH automation |
-| Andrei-George Iclodean | ~45 hours | Backend & API | Implemented FastAPI endpoints, Celery tasks, inference logic, database handling, task status management |
+| Andrei-George Iclodean | ~50 hours | CI/CD Pipeline & Infrastructure | Designed and iterated GitLab CI pipeline, added build/train/update/deploy stages, triggers, rules, SSH automation |
+| Andrei-George Iclodean | ~30 hours | Backend & API | Implemented FastAPI endpoints, Celery tasks, inference logic, database handling, task status management |
 | Andrei-George Iclodean | ~35–40 hours | Docker & Deployment | Created and refactored Dockerfiles, docker-compose services, networking, health checks |
 | Andrei-George Iclodean | ~30 hours | MLOps & Training | Implemented training scripts, retraining triggers, MLflow integration, hyperparameter updates |
 | Andrei-George Iclodean | ~20 hours | Data Engineering | CSV loading, PostgreSQL integration, DVC usage, data preprocessing pipelines |
 | Andrei-George Iclodean | ~10–15 hours | Documentation & Reports | Refactored README, added architecture descriptions, model cards, and reports |
-| **Andrei-George Iclodean – Total** | **~235–245 hours** |  |  |
+| __Andrei-George Iclodean – Total__ | __~190–200 hours__ |  |  |
 | Yuwen Zhou | ~50 hours | Data & Preprocessing | Prepared datasets, implemented preprocessing scripts, managed DVC tracking |
 | Yuwen Zhou | ~20 hours | CI/CD Support | Fixed CI time limits, modified update_data jobs |
 | Yuwen Zhou | ~10 hours | Backend | Backend updates, cleanup, removal of unused files |
 | Yuwen Zhou | ~10 hours | Testing | Executed tests on data pipelines, preprocessing scripts, and minor backend components |
 | Yuwen Zhou | ~10 hours | Documentation & System Diagrams | Wrote documentation for datasets, preprocessing scripts, and generated system diagrams for project reports |
-| **Yuwen Zhou – Total** | **~100 hours** |  |  |
+| __Yuwen Zhou – Total__ | __~100 hours__ |  |  |
 
 ## Agreed-Upon Collaboration Rules and Practices
 
