@@ -46,10 +46,11 @@ These practices enabled effective collaboration and steady progress throughout t
 
 | Tool | Prompt | Integration |
 |-----|--------|-------------|
-| Claude | “Generate a basic CSS file for the frontend UI layout, focusing on structure and readability rather than final design.” | Used only as an initial reference for frontend styling. The output was manually adapted before integration. No application logic was generated. |
+| Claude | Edit the CSS file for the frontend UI layout, focusing on structure and readability rather than final design.” | Used only as an initial reference for frontend styling. The output was manually adapted before integration. No application logic was generated. |
 | ChatGPT | “Based on these commits: **"full Git commit history"**, summarize the distribution of work per team member in a structured table.” | Used to support analysis and reporting of development effort. The output was reviewed and incorporated into Report 3. |
-| Claude | “Help analyze CI pipeline errors related to Docker and GitLab CI configuration.” | Used to assist in understanding error messages and possible causes. All fixes were implemented manually after independent verification. |
-| Copilot | Inline code and text suggestions while writing commit messages and minor edits. | Used for phrasing assistance only. All content was reviewed before use, and no core application logic was generated. |
+| Claude | “Analyze CI pipeline errors related to Docker and GitLab CI configuration.” | Used to assist in understanding error messages and possible causes. All fixes were implemented manually after independent verification. |
+| Copilot | Text suggestions while writing commit messages. | Used for phrasing assistance only. All content was reviewed before use. |
+| Claude | “Debug Grafana ‘origin not allowed’ errors while setting up a Prometheus dashboard. Suggest troubleshooting steps.” | Used as guidance to understand and fix Grafana origin issues. |
 
 
 ---
