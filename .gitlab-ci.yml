@@ -91,6 +91,16 @@ lint_code:
         - backend/api/**
         - backend/inference/**
 
+infra_healthcheck:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose ps"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose ps | grep -E 'app-api|postgres-ml|redis|mlflow|minio-mlflow' | grep -q Up"
+  rules:
+    - when: always
+
 run_tests:
   stage: test
   before_script:
@@ -107,6 +117,35 @@ run_tests:
     - if: '$CI_COMMIT_BRANCH=="develop"'
     - when: always
 
+
+api_smoke_test:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "curl -sSf http://localhost:8080/hello | grep -q 'hello'"
+    - ssh $CI_SSH_HOST "curl -sSf http://localhost:8080/metrics >/dev/null"
+  rules:
+    - when: always
+
+openapi_contract_test:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "curl -sSf http://localhost:8080/openapi.json | python3 -m json.tool >/dev/null"
+  rules:
+    - when: always
+
+db_smoke_test:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose exec -T postgres-ml psql -U postgres -d reviews_db -c \"SELECT COUNT(*) FROM processed_issues;\""
+  rules:
+    - when: always
+
 train_model:
   stage: training
   before_script:
@@ -118,6 +157,15 @@ train_model:
     - changes:
         - data/training/**
         - environment.yml
+
+frontend_smoke_test:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "curl -sSf http://localhost:80/ >/dev/null"
+  rules:
+    - when: always
 
 deploy_api:
   stage: deploy
