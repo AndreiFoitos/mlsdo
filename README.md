@@ -195,11 +195,11 @@ Our system uses a fine-tuned DistilBERT model trained on 6,200+ manually annotat
 ```
 
 7. **Access the System**
-   - Frontend: http://localhost
+   - Frontend: https://mlops.digital-lab.dev/?warpgate-target=Group%206%20HTTP%20Frontend
    - API Docs: http://localhost:8080/docs
-   - MLflow: http://localhost:5000
-   - Grafana: http://localhost:3000 (admin/admin)
-   - Prometheus: http://localhost:9090
+   - MLflow: https://mlops.digital-lab.dev/?warpgate-target=Group%206%20MLFlow%20Console
+   - Grafana: https://mlops.digital-lab.dev/grafana/login (admin/admin)
+   - Backend: https://mlops.digital-lab.dev/?warpgate-target=Group%206%20HTTP%20Backend
 
 ### Development Setup
 
