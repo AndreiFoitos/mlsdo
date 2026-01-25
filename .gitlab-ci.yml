@@ -62,16 +62,6 @@ setup_infra:
   rules:
     - when: always
 
-infra_healthcheck:
-  stage: setup
-  before_script:
-    - !reference [.sync_and_install, before_script]
-  script:
-    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose ps"
-    - ssh $CI_SSH_HOST "sudo docker compose ps | grep -E 'app-api|postgres-ml|redis|mlflow|minio-mlflow' | grep -q Up"
-  rules:
-    - when: always
-
 update_data:
   stage: update
   before_script:
@@ -101,6 +91,16 @@ lint_code:
         - backend/api/**
         - backend/inference/**
 
+infra_healthcheck:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose ps"
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose ps | grep -E 'app-api|postgres-ml|redis|mlflow|minio-mlflow' | grep -q Up"
+  rules:
+    - when: always
+
 run_tests:
   stage: test
   before_script:
@@ -116,6 +116,7 @@ run_tests:
   rules:
     - if: '$CI_COMMIT_BRANCH=="develop"'
     - when: always
+
 
 api_smoke_test:
   stage: test
@@ -141,7 +142,7 @@ db_smoke_test:
   before_script:
     - !reference [.sync_and_install, before_script]
   script:
-    - ssh $CI_SSH_HOST "sudo docker compose exec -T postgres-ml psql -U postgres -d reviews_db -c \"SELECT COUNT(*) FROM processed_issues;\""
+    - ssh $CI_SSH_HOST "cd /home/$VM_USER/app && sudo docker compose exec -T postgres-ml psql -U postgres -d reviews_db -c \"SELECT COUNT(*) FROM processed_issues;\""
   rules:
     - when: always
 
