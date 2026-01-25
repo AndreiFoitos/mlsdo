@@ -168,6 +168,8 @@ services:
     environment:
       - MINIO_ROOT_USER=mlflow_access_key
       - MINIO_ROOT_PASSWORD=mlflow_secret_key
+      - MINIO_BROWSER_REDIRECT_URL=http://mlops.digital-lab.dev:9001
+      - MINIO_SERVER_URL=http://mlops.digital-lab.dev:9000
     ports:
       - "9000:9000"
       - "9001:9001"
