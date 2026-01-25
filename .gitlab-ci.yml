@@ -158,6 +158,15 @@ train_model:
         - data/training/**
         - environment.yml
 
+frontend_smoke_test:
+  stage: test
+  before_script:
+    - !reference [.sync_and_install, before_script]
+  script:
+    - ssh $CI_SSH_HOST "curl -sSf http://localhost:80/ >/dev/null"
+  rules:
+    - when: always
+
 deploy_api:
   stage: deploy
   before_script:
